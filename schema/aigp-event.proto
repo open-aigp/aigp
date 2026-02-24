@@ -1,0 +1,383 @@
+// Copyright 2025 Open AIGP Contributors
+// SPDX-License-Identifier: Apache-2.0
+//
+// AI Governance Proof (AIGP) — Event Schema v0.11
+//
+// Normative Protobuf definition for AIGP events. This file is the single
+// source of truth for AIGP event types. The JSON Schema, OpenAPI specs,
+// and language-specific SDK types are all derived from or validated against
+// this definition.
+//
+// Wire format: Proto3 canonical JSON mapping (https://protobuf.dev/programming-guides/proto3/#json)
+// is the primary serialization. Binary protobuf is used for gRPC and
+// high-throughput transports (Kafka, NATS).
+//
+// Spec reference: https://github.com/open-aigp/aigp/blob/main/spec/aigp-spec.md
+
+syntax = "proto3";
+
+package aigp.v1;
+
+option java_package = "org.aigp.event.v1";
+option java_multiple_files = true;
+option go_package = "github.com/open-aigp/aigp/gen/go/aigp/v1;aigpv1";
+option csharp_namespace = "OpenAIGP.Event.V1";
+
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+
+// ============================================================
+//  Enums
+// ============================================================
+
+// DataClassification represents the four-tier data sensitivity model.
+// See Spec Section 9.
+enum DataClassification {
+  DATA_CLASSIFICATION_UNSPECIFIED = 0;
+  DATA_CLASSIFICATION_PUBLIC      = 1;
+  DATA_CLASSIFICATION_INTERNAL    = 2;
+  DATA_CLASSIFICATION_CONFIDENTIAL = 3;
+  DATA_CLASSIFICATION_RESTRICTED  = 4;
+}
+
+// Severity represents the impact level for denial and violation events.
+// See Spec Section 10.
+enum Severity {
+  SEVERITY_UNSPECIFIED = 0;
+  SEVERITY_LOW         = 1;
+  SEVERITY_MEDIUM      = 2;
+  SEVERITY_HIGH        = 3;
+  SEVERITY_CRITICAL    = 4;
+}
+
+// HashType indicates the algorithm used for governance_hash.
+// See Spec Section 8.
+enum HashType {
+  HASH_TYPE_UNSPECIFIED  = 0;
+  HASH_TYPE_SHA256       = 1;  // Flat SHA-256 over single content
+  HASH_TYPE_SHA384       = 2;
+  HASH_TYPE_SHA512       = 3;
+  HASH_TYPE_MERKLE_SHA256 = 4; // Merkle tree root over multiple resources
+}
+
+// HashMode indicates how a Merkle leaf hash was computed.
+// See Spec Section 8.8 (Pointer Pattern).
+enum HashMode {
+  HASH_MODE_UNSPECIFIED = 0;
+  HASH_MODE_CONTENT     = 1; // Hash of raw content (default)
+  HASH_MODE_POINTER     = 2; // Hash of content-addressable URI
+}
+
+// SiblingPosition indicates where the sibling hash appears in one Merkle proof step.
+enum SiblingPosition {
+  SIBLING_POSITION_UNSPECIFIED = 0;
+  SIBLING_POSITION_LEFT        = 1;
+  SIBLING_POSITION_RIGHT       = 2;
+}
+
+// OffsetUnit indicates the unit used for stream interruption offsets.
+enum OffsetUnit {
+  OFFSET_UNIT_UNSPECIFIED = 0;
+  OFFSET_UNIT_TOKEN       = 1;
+  OFFSET_UNIT_BYTE        = 2;
+  OFFSET_UNIT_CHAR        = 3;
+}
+
+
+// ============================================================
+//  Sub-messages
+// ============================================================
+
+// MerkleLeaf represents a single governed resource in the Merkle tree.
+// Leaf hash = SHA-256(resource_type + ":" + resource_name + ":" + content).
+// Leaves are sorted by hash value (lexicographic ascending) for determinism.
+message MerkleLeaf {
+  // Type of governed resource. Standard types: policy, prompt, tool,
+  // lineage, context, memory, model. Custom types MUST match
+  // pattern ^[a-z][a-z0-9]*(-[a-z0-9]+)*$.
+  string resource_type = 1;
+
+  // AGRN-format name (e.g., "policy.trading-limits").
+  string resource_name = 2;
+
+  // SHA-256 leaf hash, lowercase hexadecimal (64 chars).
+  string hash = 3;
+
+  // How the hash was computed. Default: HASH_MODE_CONTENT.
+  HashMode hash_mode = 4;
+
+  // When hash_mode is POINTER, the URI of the immutable content blob
+  // (e.g., "s3://aigp-governance/sha256:abc123..."). The blob's object
+  // key is the SHA-256 of the content (self-verifying).
+  // MUST be present when hash_mode is POINTER.
+  string content_ref = 5;
+
+  // Whether this leaf hash was derived using producer-side salt/nonce material
+  // in addition to content or content_ref.
+  bool is_salted = 6;
+
+  // Opaque reference to external salt/nonce material (for example,
+  // KMS/HSM/vault locator). Raw salt bytes MUST NOT be embedded in events.
+  // MUST be present when is_salted is true.
+  string salt_ref = 7;
+
+  // Whether this leaf hash represents partial stream content captured before
+  // interruption or block.
+  bool is_partial = 8;
+
+  // Unit used for stream interruption offset. MUST be present when is_partial
+  // is true.
+  OffsetUnit offset_unit = 9;
+
+  // Zero-based offset in offset_unit where interruption occurred.
+  // MUST be present when is_partial is true.
+  int64 offset = 10;
+}
+
+// MerkleProofStep represents one sibling hop in a Merkle inclusion proof path.
+message MerkleProofStep {
+  // Hash of the sibling node at this tree level.
+  string sibling_hash = 1;
+
+  // Position of sibling_hash relative to the current node.
+  SiblingPosition sibling_position = 2;
+}
+
+// MerkleInclusionProof provides the sibling path needed to prove that one leaf
+// is included in governance_hash (Merkle root) without requiring the full tree.
+message MerkleInclusionProof {
+  // Leaf hash being proven.
+  string leaf_hash = 1;
+
+  // Ordered path from leaf level to root.
+  repeated MerkleProofStep proof_path = 2;
+}
+
+// GovernanceMerkleTree contains the full Merkle tree structure for
+// multi-resource governance hash verification. Present when hash_type
+// is HASH_TYPE_MERKLE_SHA256.
+// See Spec Section 8.8.
+message GovernanceMerkleTree {
+  // Hash algorithm used for leaf and internal node computation.
+  // Default: "sha256".
+  string algorithm = 1;
+
+  // Number of leaves. Must equal len(leaves). Minimum 2.
+  int32 leaf_count = 2;
+
+  // Leaf nodes sorted by hash value (lexicographic ascending).
+  repeated MerkleLeaf leaves = 3;
+
+  // Optional inclusion proofs for selective verification.
+  repeated MerkleInclusionProof inclusion_proofs = 4;
+}
+
+
+// ============================================================
+//  AIGPEvent — the core event message
+// ============================================================
+
+// AIGPEvent is the top-level message for all AIGP governance events.
+//
+// Proto3 JSON mapping: field names use snake_case in JSON, matching
+// the existing AIGP JSON wire format exactly. Consumers MAY use either
+// binary protobuf or canonical JSON — both are first-class.
+//
+// Required fields (MUST be non-empty): event_id, event_type,
+// event_category, event_time, agent_id, governance_hash, trace_id.
+message AIGPEvent {
+
+  // --------------------------------------------------------
+  //  Required Fields (Spec Section 5.1)
+  // --------------------------------------------------------
+
+  // Unique identifier for this event (UUID v4).
+  string event_id = 1;
+
+  // What happened. UPPER_SNAKE_CASE convention (e.g., "INJECT_SUCCESS",
+  // "GOVERNANCE_PROOF", "MEMORY_READ"). See Spec Section 6 for the
+  // 31 standard event types. Custom types MUST match ^[A-Z][A-Z0-9_]*$.
+  string event_type = 2;
+
+  // Event grouping (e.g., "inject", "governance-proof", "memory").
+  // See Spec Section 6 for the 15 standard categories.
+  string event_category = 3;
+
+  // When the governance action occurred (UTC, RFC 3339, millisecond precision).
+  // Proto JSON mapping: RFC 3339 string (e.g., "2025-01-15T14:30:00.123Z").
+  google.protobuf.Timestamp event_time = 4;
+
+  // The agent that triggered this governance action.
+  // AGRN format: agent.<kebab-name> (e.g., "agent.trading-bot-v2").
+  string agent_id = 5;
+
+  // SHA-256 hash of the governed content. For single-resource events,
+  // this is a flat SHA-256. For multi-resource events (hash_type =
+  // HASH_TYPE_MERKLE_SHA256), this is the Merkle root. Lowercase
+  // hexadecimal (64 chars) when present, empty for events without
+  // governed content.
+  string governance_hash = 6;
+
+  // Distributed trace ID for end-to-end correlation. Accepts:
+  //   - W3C Trace Context trace-id (32-char lowercase hex)
+  //   - UUID v4 (with hyphens)
+  //   - Prefixed format ("trace-<uuid>")
+  string trace_id = 7;
+
+
+  // --------------------------------------------------------
+  //  Agent and Organization Fields (Spec Section 5.2)
+  // --------------------------------------------------------
+
+  // Human-readable agent name.
+  string agent_name = 10;
+
+  // Organization the agent belongs to. AGRN: org.<kebab-name>.
+  string org_id = 11;
+
+  // Human-readable organization name.
+  string org_name = 12;
+
+
+  // --------------------------------------------------------
+  //  Policy and Prompt Fields (Spec Section 5.3)
+  // --------------------------------------------------------
+
+  // ID of the policy that was accessed or injected.
+  string policy_id = 20;
+
+  // Human-readable policy name. AGRN: policy.<kebab-name>.
+  string policy_name = 21;
+
+  // Version of the policy at event time (point-in-time snapshot).
+  int32 policy_version = 22;
+
+  // ID of the prompt that was used.
+  string prompt_id = 23;
+
+  // Human-readable prompt name. AGRN: prompt.<kebab-name>.
+  string prompt_name = 24;
+
+  // Version of the prompt at event time (point-in-time snapshot).
+  int32 prompt_version = 25;
+
+
+  // --------------------------------------------------------
+  //  Governance Proof Fields (Spec Section 5.4)
+  // --------------------------------------------------------
+
+  // Hash algorithm used. Default: HASH_TYPE_SHA256.
+  HashType hash_type = 30;
+
+  // OpenTelemetry span ID (16-char lowercase hex). Correlates this
+  // AIGP event with a specific span in an OTel trace.
+  string span_id = 31;
+
+  // OpenTelemetry parent span ID (16-char lowercase hex).
+  string parent_span_id = 32;
+
+  // W3C Trace Context trace-flags (2-char lowercase hex).
+  // "01" = sampled.
+  string trace_flags = 33;
+
+  // Data sensitivity classification.
+  DataClassification data_classification = 34;
+
+  // Whether the policy was rendered with template variables before delivery.
+  bool template_rendered = 35;
+
+  // Merkle tree structure. Present when hash_type is HASH_TYPE_MERKLE_SHA256.
+  GovernanceMerkleTree governance_merkle_tree = 36;
+
+
+  // --------------------------------------------------------
+  //  Denial and Policy Fields (Spec Section 5.5)
+  // --------------------------------------------------------
+
+  // Why access was denied (human-readable). Present for *_DENIED events.
+  string denial_reason = 40;
+
+  // Category of policy violation.
+  string violation_type = 41;
+
+  // Impact level for denial and violation events.
+  Severity severity = 42;
+
+
+  // --------------------------------------------------------
+  //  Request Fields (Spec Section 5.6)
+  // --------------------------------------------------------
+
+  // IP address of the requesting agent or service.
+  string source_ip = 50;
+
+  // HTTP method or protocol action (e.g., "POST", "A2A", "MCP").
+  string request_method = 51;
+
+  // API path or skill name.
+  string request_path = 52;
+
+
+  // --------------------------------------------------------
+  //  Annotations, Timestamps, Version (Spec Section 5.7)
+  // --------------------------------------------------------
+
+  // When the event was received by the analytics store.
+  google.protobuf.Timestamp ingested_at = 60;
+
+  // Informational context. NOT included in governance hashes.
+  // Use for regulatory hooks, domain tags, or supplementary context.
+  // Consumers MUST ignore keys they do not recognize.
+  google.protobuf.Struct annotations = 61;
+
+  // AIGP specification version the producer implemented.
+  string spec_version = 62;
+
+
+  // --------------------------------------------------------
+  //  Memory and Model Fields (Spec Section 6.9, 6.16)
+  // --------------------------------------------------------
+
+  // SHA-256 hash of a retrieval query (MEMORY_READ events).
+  string query_hash = 70;
+
+  // SHA-256 hash of resource state before a write operation
+  // (MEMORY_WRITTEN, MODEL_SWITCHED events).
+  string previous_hash = 71;
+
+
+  // --------------------------------------------------------
+  //  Proof Integrity Fields (Spec Section 5.8)
+  // --------------------------------------------------------
+
+  // JWS Compact Serialization (RFC 7515) over canonical event JSON.
+  // ES256 (ECDSA P-256 + SHA-256) is mandatory-to-implement.
+  // Provides non-repudiation: proves WHO produced the governance proof.
+  string event_signature = 80;
+
+  // AGRN-style identifier for the signing key. Enables key rotation.
+  // MUST be present when event_signature is non-empty.
+  // Example: "aigp:org.finco:agent.trading-bot-v2:2026-02"
+  string signature_key_id = 81;
+
+  // Monotonically increasing counter scoped per (agent_id, trace_id).
+  // Provides causal ordering within a single agent's trace.
+  // MUST NOT reset within a trace. 0 means unset.
+  int64 sequence_number = 82;
+
+  // Points to the event_id that causally precedes this event.
+  // Creates a DAG of causal dependencies across agents.
+  string causality_ref = 83;
+}
+
+
+// ============================================================
+//  Batch message for bulk transport
+// ============================================================
+
+// AIGPEventBatch wraps multiple events for efficient bulk delivery
+// over HTTP POST (JSON array), Kafka, or gRPC streaming.
+message AIGPEventBatch {
+  repeated AIGPEvent events = 1;
+}

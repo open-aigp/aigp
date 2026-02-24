@@ -1,0 +1,35 @@
+name: Python SDK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install SDK and test dependencies
+        run: |
+          echo "::warning::Mirror-only workflow. Canonical Python SDK CI runs in open-aigp/aigp-sdks."
+          python -m pip install --upgrade pip
+          python -m pip install -e ./sdks/python[dev]
+
+      - name: Run Python SDK tests
+        run: |
+          cd sdks/python
+          pytest -q
+
+      - name: Run quickstart example
+        run: |
+          cd sdks/python
+          PYTHONPATH=. python examples/quickstart.py
+
+      - name: Run end-to-end example smoke test
+        run: |
+          cd sdks/python
+          PYTHONPATH=. python examples/end_to_end.py

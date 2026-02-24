@@ -1,0 +1,36 @@
+{
+  "specversion": "1.0",
+  "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "type": "org.aigp.v1.inject_success",
+  "source": "aigp://org.finco/agent.trading-bot-v2",
+  "time": "2026-02-15T14:30:00.123Z",
+  "datacontenttype": "application/json",
+  "dataschema": "https://open-aigp.org/schema/aigp-event.schema.json",
+  "subject": "policy.trading-limits",
+  "aigpagentid": "agent.trading-bot-v2",
+  "aigporgid": "org.finco",
+  "aigpcategory": "inject",
+  "aigpclassification": "confidential",
+  "data": {
+    "event_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "event_type": "INJECT_SUCCESS",
+    "event_category": "inject",
+    "event_time": "2026-02-15T14:30:00.123Z",
+    "agent_id": "agent.trading-bot-v2",
+    "agent_name": "Trading Bot v2",
+    "org_id": "org.finco",
+    "org_name": "FinCo",
+    "policy_name": "policy.trading-limits",
+    "policy_version": 4,
+    "governance_hash": "a3f2b8c1d4e5f67890abcdef1234567890abcdef1234567890abcdef12345678",
+    "hash_type": "sha256",
+    "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
+    "data_classification": "confidential",
+    "template_rendered": true,
+    "annotations": {
+      "regulatory_framework": "SEC Rule 15c3-5",
+      "risk_tier": "high"
+    },
+    "spec_version": "0.11"
+  }
+}

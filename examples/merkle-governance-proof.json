@@ -1,0 +1,104 @@
+{
+  "event_id": "f1a2b3c4-d5e6-7890-abcd-ef0123456789",
+  "event_type": "GOVERNANCE_PROOF",
+  "event_category": "governance-proof",
+  "event_time": "2026-02-15T14:00:00.123Z",
+  "agent_id": "agent.customer-support-v3",
+  "agent_name": "Customer Support Agent",
+  "org_id": "org.summit-retail",
+  "org_name": "Summit Retail",
+  "policy_id": "",
+  "policy_name": "policy.refund-limits",
+  "policy_version": 3,
+  "prompt_id": "",
+  "prompt_name": "",
+  "prompt_version": 0,
+  "governance_hash": "8dd4648db4f94db951f83bb70fa7b575533912f4fd3219d161384df2b8d523ec",
+  "hash_type": "merkle-sha256",
+  "trace_id": "aabbccdd11223344556677889900aabb",
+  "span_id": "1122334455667788",
+  "parent_span_id": "",
+  "trace_flags": "01",
+  "data_classification": "confidential",
+  "template_rendered": true,
+  "denial_reason": "",
+  "violation_type": "",
+  "severity": "",
+  "source_ip": "10.20.5.55",
+  "request_method": "POST",
+  "request_path": "/api/agents/customer-support-v3/invoke",
+  "annotations": {
+    "regulatory_hooks": [
+      "CCPA",
+      "PCI-DSS"
+    ]
+  },
+  "spec_version": "0.11",
+  "governance_merkle_tree": {
+    "algorithm": "sha256",
+    "leaf_count": 9,
+    "leaves": [
+      {
+        "resource_type": "policy",
+        "resource_name": "policy.refund-limits",
+        "hash": "1138149eb8ee4355ad80ee3c02a93c46a2b82c8976eaa9ba7c304b740cc6921a"
+      },
+      {
+        "resource_type": "policy",
+        "resource_name": "policy.customer-privacy",
+        "hash": "16ec2355054a1f60f476c20f54ccfa6056b0b224a6582a19307a3b9eabc8bfec"
+      },
+      {
+        "resource_type": "context",
+        "resource_name": "context.env-config",
+        "hash": "3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a00"
+      },
+      {
+        "resource_type": "memory",
+        "resource_name": "memory.conversation-history",
+        "hash": "4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c00"
+      },
+      {
+        "resource_type": "tool",
+        "resource_name": "tool.order-lookup",
+        "hash": "5769525038c226978cb78b401f0c62c00442b5b6c48f0a9cb9a7cff504f75366"
+      },
+      {
+        "resource_type": "prompt",
+        "resource_name": "prompt.customer-support-v3",
+        "hash": "6db68d9c3b408fc19a6b38cc7ab2e2ad5de15cd2017dac4496ccc34c1d1f7329"
+      },
+      {
+        "resource_type": "model",
+        "resource_name": "model.gpt4-support-v2",
+        "hash": "7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e00"
+      },
+      {
+        "resource_type": "lineage",
+        "resource_name": "lineage.upstream-orders",
+        "hash": "8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e00"
+      },
+      {
+        "resource_type": "tool",
+        "resource_name": "tool.refund-processor",
+        "hash": "a3adf99f87cac0f3acd8b7bdf9dd7681bee4b4bf7bd2dfbc0c81f87deb29c9ff"
+      }
+    ],
+    "inclusion_proofs": [
+      {
+        "leaf_hash": "1138149eb8ee4355ad80ee3c02a93c46a2b82c8976eaa9ba7c304b740cc6921a",
+        "proof_path": [
+          {
+            "sibling_hash": "16ec2355054a1f60f476c20f54ccfa6056b0b224a6582a19307a3b9eabc8bfec",
+            "sibling_position": "right"
+          },
+          {
+            "sibling_hash": "5769525038c226978cb78b401f0c62c00442b5b6c48f0a9cb9a7cff504f75366",
+            "sibling_position": "left"
+          }
+        ]
+      }
+    ]
+  },
+  "sequence_number": 1
+}

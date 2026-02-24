@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://open-aigp.org/schema/aigp-verifier-report.schema.json",
+  "title": "AIGP Verifier Report",
+  "description": "Machine-readable verification report schema for AIGP auditors (v0.11). Defines stable finding identifiers for ordering, signature, and Merkle integrity checks.",
+  "type": "object",
+  "required": [
+    "run_id",
+    "spec_version",
+    "verified_at",
+    "result",
+    "summary",
+    "findings"
+  ],
+  "properties": {
+    "run_id": {
+      "type": "string",
+      "description": "Unique identifier for this verifier run."
+    },
+    "spec_version": {
+      "type": "string",
+      "description": "AIGP specification line used by the verifier.",
+      "examples": ["0.11"]
+    },
+    "verified_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when verification completed."
+    },
+    "source": {
+      "type": "string",
+      "description": "Audit evidence source (bucket URI, file path, API endpoint).",
+      "default": ""
+    },
+    "trace_id": {
+      "type": "string",
+      "description": "Optional trace ID scope for this report.",
+      "default": ""
+    },
+    "result": {
+      "type": "string",
+      "enum": ["pass", "fail", "warning"],
+      "description": "Overall verifier outcome."
+    },
+    "summary": {
+      "type": "object",
+      "required": [
+        "total_events",
+        "passed_events",
+        "failed_events",
+        "signature_failures",
+        "merkle_failures",
+        "ordering_failures",
+        "profile_violations"
+      ],
+      "properties": {
+        "total_events": { "type": "integer", "minimum": 0 },
+        "passed_events": { "type": "integer", "minimum": 0 },
+        "failed_events": { "type": "integer", "minimum": 0 },
+        "signature_failures": { "type": "integer", "minimum": 0 },
+        "merkle_failures": { "type": "integer", "minimum": 0 },
+        "ordering_failures": { "type": "integer", "minimum": 0 },
+        "profile_violations": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "findings": {
+      "type": "array",
+      "description": "Event-level and trace-level verification findings.",
+      "items": {
+        "type": "object",
+        "required": ["finding_id", "message"],
+        "properties": {
+          "finding_id": {
+            "type": "string",
+            "enum": [
+              "SEQUENCE_GAP",
+              "SEQUENCE_DUPLICATE",
+              "SEQUENCE_RESET",
+              "BROKEN_CAUSAL_REF",
+              "SIGNATURE_VERIFICATION_FAILED",
+              "MERKLE_ROOT_MISMATCH",
+              "INCLUSION_PROOF_INVALID",
+              "PROFILE_REQUIREMENT_FAILED",
+              "SCHEMA_VALIDATION_FAILED"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable explanation of the finding."
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["critical", "high", "medium", "low", "info"],
+            "default": "medium"
+          },
+          "event_id": {
+            "type": "string",
+            "description": "Event identifier when finding is scoped to one event.",
+            "default": ""
+          },
+          "agent_id": {
+            "type": "string",
+            "default": ""
+          },
+          "trace_id": {
+            "type": "string",
+            "default": ""
+          },
+          "sequence_number": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "details": {
+            "type": "object",
+            "default": {},
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

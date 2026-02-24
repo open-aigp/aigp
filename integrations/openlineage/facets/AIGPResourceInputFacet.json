@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/open-aigp/aigp/blob/v0.11/integrations/openlineage/facets/AIGPResourceInputFacet.json",
+  "$defs": {
+    "AIGPResourceInputFacet": {
+      "allOf": [
+        {
+          "$ref": "https://openlineage.io/spec/2-0-2/OpenLineage.json#/$defs/InputDatasetFacet"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "resourceType": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$",
+              "description": "AIGP resource type. Standard types: policy, prompt, tool, lineage, context, memory, model. Custom types matching this pattern are permitted."
+            },
+            "resourceName": {
+              "type": "string",
+              "description": "AGRN-format resource name (e.g., 'policy.trading-limits', 'context.env-config', 'lineage.upstream-orders', 'memory.conversation-history', 'model.gpt4-trading-v2')."
+            },
+            "resourceVersion": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Version of the resource at the time of the governance action."
+            },
+            "leafHash": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$",
+              "description": "Merkle leaf hash per AIGP Spec Section 8.8.2. SHA-256(resource_type:resource_name:content)."
+            }
+          },
+          "required": ["resourceType", "resourceName"],
+          "additionalProperties": true
+        }
+      ],
+      "type": "object"
+    }
+  },
+  "type": "object",
+  "properties": {
+    "aigp_resource": {
+      "$ref": "#/$defs/AIGPResourceInputFacet"
+    }
+  }
+}

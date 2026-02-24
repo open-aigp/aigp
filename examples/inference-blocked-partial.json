@@ -1,0 +1,74 @@
+{
+  "event_id": "c7d8e9f0-1234-4abc-9def-1234567890ab",
+  "event_type": "INFERENCE_BLOCKED",
+  "event_category": "inference",
+  "event_time": "2026-02-20T11:40:00.123Z",
+  "agent_id": "agent.customer-support",
+  "agent_name": "Customer Support Agent",
+  "org_id": "org.acme-corp",
+  "org_name": "Acme Corp",
+  "policy_id": "pol-toxicity-filter",
+  "policy_name": "policy.toxicity-filter",
+  "policy_version": 5,
+  "prompt_id": "pmt-support-v4",
+  "prompt_name": "prompt.customer-support-v4",
+  "prompt_version": 4,
+  "governance_hash": "f1e2d3c4a5b697887766554433221100ffeeddccbbaa99887766554433221100",
+  "hash_type": "merkle-sha256",
+  "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
+  "span_id": "00f067aa0ba902b7",
+  "parent_span_id": "00f067aa0ba902b1",
+  "trace_flags": "01",
+  "data_classification": "internal",
+  "template_rendered": false,
+  "denial_reason": "Policy violation: harassment detected at token 150",
+  "violation_type": "POLICY_VIOLATION",
+  "severity": "high",
+  "source_ip": "",
+  "request_method": "A2A",
+  "request_path": "inference/stream",
+  "ingested_at": "2026-02-20T11:40:00.180Z",
+  "annotations": {
+    "reason_code": "toxicity_guardrail",
+    "model_name": "model.gpt4-support-v4"
+  },
+  "query_hash": "",
+  "previous_hash": "",
+  "event_signature": "",
+  "signature_key_id": "",
+  "sequence_number": 8,
+  "causality_ref": "b4c5d6e7-1111-4222-9333-444444444444",
+  "spec_version": "0.11",
+  "governance_merkle_tree": {
+    "algorithm": "sha256",
+    "leaf_count": 2,
+    "leaves": [
+      {
+        "resource_type": "policy",
+        "resource_name": "policy.toxicity-filter",
+        "hash": "a1b2c3d4a5b697887766554433221100ffeeddccbbaa99887766554433221100",
+        "hash_mode": "content"
+      },
+      {
+        "resource_type": "context",
+        "resource_name": "context.generation.partial-stream",
+        "hash": "b5c6d7e8a9b0c1d2e3f40112233445566778899aabbccddeeff0011223344556",
+        "hash_mode": "content",
+        "is_partial": true,
+        "offset_unit": "token",
+        "offset": 150
+      }
+    ],
+    "inclusion_proofs": [
+      {
+        "leaf_hash": "b5c6d7e8a9b0c1d2e3f40112233445566778899aabbccddeeff0011223344556",
+        "proof_path": [
+          {
+            "sibling_hash": "a1b2c3d4a5b697887766554433221100ffeeddccbbaa99887766554433221100",
+            "sibling_position": "left"
+          }
+        ]
+      }
+    ]
+  }
+}

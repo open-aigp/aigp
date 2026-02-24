@@ -1,0 +1,18 @@
+name: SDK Ownership Guard
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'sdks/**'
+  workflow_dispatch:
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enforce canonical SDK ownership
+        run: |
+          echo "::error::SDK changes must land in open-aigp/aigp-sdks (canonical SDK repo), not in open-aigp/aigp/sdks mirror."
+          echo "::error::Open a PR against https://github.com/open-aigp/aigp-sdks and sync mirror content afterward if needed."
+          exit 1

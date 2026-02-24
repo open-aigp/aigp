@@ -1,0 +1,35 @@
+name: Validate Version Sync
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'spec/**'
+      - 'README.md'
+      - 'docs/**'
+      - 'schema/**'
+      - 'examples/**'
+      - 'integrations/**'
+      - 'scripts/check-version-sync.sh'
+      - '.github/workflows/version-sync.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'spec/**'
+      - 'README.md'
+      - 'docs/**'
+      - 'schema/**'
+      - 'examples/**'
+      - 'integrations/**'
+      - 'scripts/check-version-sync.sh'
+      - '.github/workflows/version-sync.yml'
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate version consistency
+        run: bash scripts/check-version-sync.sh
