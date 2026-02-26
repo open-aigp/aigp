@@ -623,7 +623,7 @@ class TestModelResourceType:
 
 
 # ===================================================================
-# Inclusion Proof Tests (v0.11)
+# Inclusion Proof Tests (v0.12)
 # ===================================================================
 
 class TestInclusionProofs:

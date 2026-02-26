@@ -648,12 +648,12 @@ def create_aigp_event(
     sequence_number: int = 0,
     causality_ref: str = "",
     # Version
-    spec_version: str = "0.11",
+    spec_version: str = "0.12",
     # Merkle tree (Section 8.8)
     governance_merkle_tree: Optional[dict[str, Any]] = None,
 ) -> dict[str, Any]:
     """
-    Create an AIGP event conforming to the v0.11 schema.
+    Create an AIGP event conforming to the v0.12 schema.
 
     This function creates the standalone AIGP JSON event (the governance
     record). For the OTel span event (the observability record), use
@@ -680,11 +680,11 @@ def create_aigp_event(
         signature_key_id: AGRN-style key identifier for the signing key.
         sequence_number: Monotonic counter per (agent_id, trace_id). Values <= 0 auto-increment.
         causality_ref: event_id of the preceding event in the causal chain.
-        spec_version: AIGP spec version. Default "0.11".
+        spec_version: AIGP spec version. Default "0.12".
         governance_merkle_tree: Merkle tree dict (Section 8.8). Optional.
 
     Returns:
-        Dict conforming to AIGP event schema v0.11.
+        Dict conforming to AIGP event schema v0.12.
     """
     now = datetime.now(timezone.utc)
 

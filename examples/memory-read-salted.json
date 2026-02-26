@@ -38,7 +38,7 @@
   "signature_key_id": "",
   "sequence_number": 12,
   "causality_ref": "b7a6c5d4-3333-4444-9555-666666666666",
-  "spec_version": "0.11",
+  "spec_version": "0.12",
   "governance_merkle_tree": {
     "algorithm": "sha256",
     "leaf_count": 2,

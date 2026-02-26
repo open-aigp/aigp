@@ -556,7 +556,7 @@ namespace AIGP.Sdk
                     ? options.SequenceNumber
                     : NextSequenceNumber(options.AgentID ?? string.Empty, traceId),
                 CausalityRef = options.CausalityRef ?? string.Empty,
-                SpecVersion = string.IsNullOrWhiteSpace(options.SpecVersion) ? "0.11" : options.SpecVersion,
+                SpecVersion = string.IsNullOrWhiteSpace(options.SpecVersion) ? "0.12" : options.SpecVersion,
                 GovernanceMerkleTree = options.GovernanceMerkleTree,
             };
         }
@@ -859,7 +859,7 @@ namespace AIGP.Sdk
                 ["annotations"] = eventData.Annotations ?? new Dictionary<string, object>(),
                 ["sequence_number"] = eventData.SequenceNumber,
                 ["causality_ref"] = eventData.CausalityRef ?? string.Empty,
-                ["spec_version"] = eventData.SpecVersion ?? "0.11",
+                ["spec_version"] = eventData.SpecVersion ?? "0.12",
             };
 
             if (eventData.GovernanceMerkleTree != null)
@@ -1178,7 +1178,7 @@ namespace AIGP.Sdk
         public string SignatureKeyID { get; set; } = string.Empty;
         public long SequenceNumber { get; set; }
         public string CausalityRef { get; set; } = string.Empty;
-        public string SpecVersion { get; set; } = "0.11";
+        public string SpecVersion { get; set; } = "0.12";
         public GovernanceMerkleTree GovernanceMerkleTree { get; set; }
     }
 
@@ -1254,7 +1254,7 @@ namespace AIGP.Sdk
 
         public string CausalityRef { get; set; } = string.Empty;
 
-        public string SpecVersion { get; set; } = "0.11";
+        public string SpecVersion { get; set; } = "0.12";
 
         public GovernanceMerkleTree GovernanceMerkleTree { get; set; }
     }

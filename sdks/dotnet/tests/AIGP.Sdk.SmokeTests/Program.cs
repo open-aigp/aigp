@@ -58,7 +58,7 @@ internal static class Program
         Expect(evt.EventType == "INJECT_SUCCESS", $"unexpected normalized event type {evt.EventType}");
         Expect(evt.EventCategory == "inject", $"unexpected normalized event category {evt.EventCategory}");
         Expect(!string.IsNullOrWhiteSpace(evt.TraceID), "trace_id should be auto-generated");
-        Expect(evt.SpecVersion == "0.11", $"unexpected default spec_version {evt.SpecVersion}");
+        Expect(evt.SpecVersion == "0.12", $"unexpected default spec_version {evt.SpecVersion}");
 
         var errors = AIGP.ValidateAIGPEvent(evt);
         Expect(errors.Count == 0, "expected no validation errors");

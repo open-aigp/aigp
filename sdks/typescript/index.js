@@ -516,7 +516,7 @@ function createAIGPEvent(options) {
     signature_key_id: String(options.signature_key_id || options.signatureKeyId || ""),
     sequence_number: sequenceNumber,
     causality_ref: String(options.causality_ref || options.causalityRef || ""),
-    spec_version: String(options.spec_version || options.specVersion || "0.11"),
+    spec_version: String(options.spec_version || options.specVersion || "0.12"),
   };
 
   const merkleTree = options.governance_merkle_tree || options.governanceMerkleTree;

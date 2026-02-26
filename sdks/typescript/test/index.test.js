@@ -41,7 +41,7 @@ test("createAIGPEvent returns spec-conformant core fields", () => {
   assert.equal(event.event_category, "inject");
   assert.match(event.trace_id, /^[a-f0-9]{32}$/);
   assert.ok(event.sequence_number >= 1);
-  assert.equal(event.spec_version, "0.11");
+  assert.equal(event.spec_version, "0.12");
   assert.equal(sdk.validateAIGPEvent(event).length, 0);
 });
 

@@ -34,6 +34,6 @@
     "latency_ms": 1250,
     "token_count": 384
   },
-  "spec_version": "0.11",
+  "spec_version": "0.12",
   "sequence_number": 1
 }

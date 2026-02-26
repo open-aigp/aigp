@@ -33,7 +33,7 @@ The run facet provides the summary (hash, enforcement result, classification). T
 | Property | Type | Required | Description | Example |
 |---|---|---|---|---|
 | `_producer` | String (URI) | Yes | URI identifying the producer | `"https://github.com/open-aigp/aigp"` |
-| `_schemaURL` | String (URI) | Yes | JSON Pointer to schema version | `"https://github.com/open-aigp/aigp/blob/v0.11/..."` |
+| `_schemaURL` | String (URI) | Yes | JSON Pointer to schema version | `"https://github.com/open-aigp/aigp/blob/v0.12/..."` |
 | `governanceHash` | String | Yes | SHA-256 governance hash (flat or Merkle root) | `"a3f8..."` |
 | `hashType` | String | Yes | `"sha256"` or `"merkle-sha256"` | `"merkle-sha256"` |
 | `agentId` | String | Yes | AGRN agent identifier | `"agent.credit-scorer-v2"` |
@@ -41,7 +41,7 @@ The run facet provides the summary (hash, enforcement result, classification). T
 | `leafCount` | Int | No | Number of governed resources | `3` |
 | `enforcementResult` | String | No | `"allowed"` or `"denied"` | `"allowed"` |
 | `dataClassification` | String | No | Highest classification level | `"confidential"` |
-| `specVersion` | String | No | AIGP specification version | `"0.11"` |
+| `specVersion` | String | No | AIGP specification version | `"0.12"` |
 
 ---
 
@@ -50,7 +50,7 @@ The run facet provides the summary (hash, enforcement result, classification). T
 | Property | Type | Required | Description | Example |
 |---|---|---|---|---|
 | `_producer` | String (URI) | Yes | URI identifying the producer | `"https://github.com/open-aigp/aigp"` |
-| `_schemaURL` | String (URI) | Yes | JSON Pointer to schema version | `"https://github.com/open-aigp/aigp/blob/v0.11/..."` |
+| `_schemaURL` | String (URI) | Yes | JSON Pointer to schema version | `"https://github.com/open-aigp/aigp/blob/v0.12/..."` |
 | `resourceType` | String | Yes | `"policy"`, `"prompt"`, `"tool"`, `"context"`, `"lineage"`, `"memory"`, or `"model"` | `"memory"` |
 | `resourceName` | String | Yes | AGRN-format resource name | `"lineage.upstream-orders"` |
 | `resourceVersion` | Int | No | Version at time of governance action | `4` |

@@ -34,6 +34,6 @@
     "retrieval_method": "semantic-search",
     "result_count": 5
   },
-  "spec_version": "0.11",
+  "spec_version": "0.12",
   "sequence_number": 1
 }

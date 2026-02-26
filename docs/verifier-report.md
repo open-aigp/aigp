@@ -3,7 +3,7 @@ title: Verifier Report
 layout: default
 ---
 
-# AIGP Verifier Report (`v0.11`)
+# AIGP Verifier Report (`v0.12`)
 
 This document defines the practical output contract for verifier tools.
 
@@ -27,7 +27,7 @@ Canonical schema:
 ```json
 {
   "run_id": "verify-2026-02-20T15:22:01Z",
-  "spec_version": "0.11",
+  "spec_version": "0.12",
   "verified_at": "2026-02-20T15:22:01.000Z",
   "source": "s3://aigp-gov/events/trace-550e8400/",
   "trace_id": "550e8400-e29b-41d4-a716-446655440000",

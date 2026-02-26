@@ -107,7 +107,7 @@ class TestEmitBasic:
         tracer = trace.get_tracer("test")
         with tracer.start_as_current_span("test-span") as span:
             event = instrumentor.emit("test.event", content="test.event", span=span)
-        assert event["spec_version"] == "0.11"
+        assert event["spec_version"] == "0.12"
 
     def test_emit_default_category(self, instrumentor):
         """Default event_category is 'governance'."""

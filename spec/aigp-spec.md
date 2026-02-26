@@ -1,6 +1,6 @@
 # AI Governance Proof (AIGP) Specification
 
-**Version:** 0.11 (Draft)
+**Version:** 0.12 (Draft)
 
 **Status:** Draft
 
@@ -324,7 +324,7 @@ The following fields are OPTIONAL and provide extensibility, operational timesta
 | `template_rendered` | Boolean | `false` | Indicates whether the policy content was rendered with template variables before delivery. When `true`, the `governance_hash` MUST be computed over the rendered (post-substitution) content. |
 | `ingested_at` | String (DateTime) | *(none)* | The time at which the event was received by the analytics or storage system. MUST be in RFC 3339 format with millisecond precision and UTC timezone designator `Z`. This field enables measurement of ingestion latency (`ingested_at` minus `event_time`). |
 | `annotations` | Object | `{}` | Informational context for the governance event. Annotations are NOT included in governance hashes and are NOT governed resources. Implementations MAY use this field to attach regulatory hooks, domain-specific tags, or supplementary context that does not require cryptographic proof. Consumers MUST NOT require specific keys within `annotations` to process core AIGP events. Consumers MUST ignore annotation keys they do not recognize. |
-| `spec_version` | String | `""` | The AIGP specification version the producer implemented (e.g., `"0.11"`). Consumers MAY use this field to determine which features and resource types to expect. When absent or empty, consumers SHOULD NOT assume any particular version. |
+| `spec_version` | String | `""` | The AIGP specification version the producer implemented (e.g., `"0.12"`). Consumers MAY use this field to determine which features and resource types to expect. When absent or empty, consumers SHOULD NOT assume any particular version. |
 
 ### 5.8 Proof Integrity Fields
 
@@ -1381,7 +1381,7 @@ The entire CloudEvents envelope (context attributes + AIGP event as `data`) is s
     "hash_type": "sha256",
     "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
     "data_classification": "confidential",
-    "spec_version": "0.11"
+    "spec_version": "0.12"
   }
 }
 ```
@@ -1601,7 +1601,7 @@ The following is a fully annotated AIGP event representing a successful policy i
   "signature_key_id": "",
   "sequence_number": 1,
   "causality_ref": "",
-  "spec_version": "0.11"
+  "spec_version": "0.12"
 }
 ```
 
@@ -1639,7 +1639,7 @@ The following is a fully annotated AIGP event representing a successful policy i
 | `signature_key_id` | Empty -- no signing key used. When populated, contains an AGRN-style key identifier. |
 | `sequence_number` | `1` -- causal ordering counter. Monotonically increasing per (`agent_id`, `trace_id`) pair (Section 5.8). |
 | `causality_ref` | Empty -- no causally preceding event referenced. When populated, contains the `event_id` of the prior event (Section 5.8). |
-| `spec_version` | `0.11` -- the AIGP specification version the producer implemented. |
+| `spec_version` | `0.12` -- the AIGP specification version the producer implemented. |
 
 ---
 
@@ -1647,6 +1647,7 @@ The following is a fully annotated AIGP event representing a successful policy i
 
 | Version | Date | Changes |
 |---|---|---|
+| 0.12 | 2026-02-26 | Version line bump and alignment of spec/schema/docs/examples/SDK defaults and integration companion docs to 0.12; no wire-format breaking changes from 0.11. |
 | 0.11 | 2026-02-20 | Privacy + streaming + auditor readiness. Adds optional salted leaf metadata (`is_salted`, `salt_ref`) to support privacy-preserving verification patterns where raw salt material is managed out-of-band. Adds optional stream interruption metadata (`is_partial`, `offset_unit`, `offset`) for partial-output proof in blocked/violating inference flows. Extends verifier guidance with stable integrity finding identifiers (`SIGNATURE_VERIFICATION_FAILED`, `MERKLE_ROOT_MISMATCH`, `INCLUSION_PROOF_INVALID`) and introduces a recommended verifier report schema (`schema/aigp-verifier-report.schema.json`). |
 | 0.10.0 | 2026-02-19 | Merkle inclusion proofs for selective verification. Adds optional `governance_merkle_tree.inclusion_proofs` with ordered proof paths (`sibling_hash`, `sibling_position`) for root-verifiable subset auditing. Introduces conformance profiles (Section 12.4) and reference HIPAA/FINRA sector profiles (Section 12.5), including profile-level requirement to sign `high`/`critical` severity events. Adds boundary claim guidance for `UNVERIFIED_BOUNDARY` events and a reference audit viewer requirements appendix for non-technical auditors. Tightens ordering baseline: `sequence_number` is now a required field and MUST be >= 1. |
 | 0.9.0 | 2026-02-15 | Normative Protobuf schema and CloudEvents transport. Adds `schema/aigp-event.proto` (Proto3) as the single source of truth for AIGP event types. Proto3 messages: `AIGPEvent`, `GovernanceMerkleTree`, `MerkleLeaf`, `AIGPEventBatch`. Proto3 enums: `DataClassification`, `Severity`, `HashType`, `HashMode`. Canonical JSON mapping preserves existing wire format. Buf configuration for linting, breaking change detection, and multi-language code generation (TypeScript, Go, Python). Language-specific package options for Java, Go, C#. Section 13 rewritten to adopt CloudEvents (CNCF Graduated, v1.0) as the normative transport layer. Defines 6 AIGP extension attributes (`aigpagentid`, `aigporgid`, `aigpcategory`, `aigpclassification`, `aigpseverity`, `aigphashtype`) for envelope-level routing. Type convention: `org.aigp.v1.<lowercase_event_type>`. Source convention: `aigp://<org_id>/<agent_id>`. Supports structured and binary content modes across HTTP, Kafka, AMQP, NATS, gRPC, and WebSockets. Python SDK: `cloudevents` module. No wire format changes — existing JSON events are valid v0.9.0 events. |

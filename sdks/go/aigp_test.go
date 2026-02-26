@@ -64,8 +64,8 @@ func TestCreateAndValidateAIGPEvent(t *testing.T) {
 	if event.SequenceNumber < 1 {
 		t.Fatalf("expected auto sequence_number >= 1, got %d", event.SequenceNumber)
 	}
-	if event.SpecVersion != "0.11" {
-		t.Fatalf("expected default spec_version 0.11, got %q", event.SpecVersion)
+	if event.SpecVersion != "0.12" {
+		t.Fatalf("expected default spec_version 0.12, got %q", event.SpecVersion)
 	}
 
 	errs := ValidateAIGPEvent(event)

@@ -1,8 +1,8 @@
 # AIGP CloudEvents Binding
 
-**Version:** 0.11 (Draft)
+**Version:** 0.12 (Draft)
 
-**Companion to:** [AIGP Specification v0.11](../../spec/aigp-spec.md), Section 13
+**Companion to:** [AIGP Specification v0.12](../../spec/aigp-spec.md), Section 13
 
 ---
 

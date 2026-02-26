@@ -1,7 +1,7 @@
 // Copyright 2025 Open AIGP Contributors
 // SPDX-License-Identifier: Apache-2.0
 //
-// AI Governance Proof (AIGP) — Event Schema v0.11
+// AI Governance Proof (AIGP) — Event Schema v0.12
 //
 // Normative Protobuf definition for AIGP events. This file is the single
 // source of truth for AIGP event types. The JSON Schema, OpenAPI specs,

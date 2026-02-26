@@ -60,12 +60,12 @@ from typing import Any
 PRODUCER = "https://github.com/open-aigp/aigp"
 
 RUN_FACET_SCHEMA_URL = (
-    "https://github.com/open-aigp/aigp/blob/v0.11/"
+    "https://github.com/open-aigp/aigp/blob/v0.12/"
     "integrations/openlineage/facets/AIGPGovernanceRunFacet.json"
 )
 
 RESOURCE_FACET_SCHEMA_URL = (
-    "https://github.com/open-aigp/aigp/blob/v0.11/"
+    "https://github.com/open-aigp/aigp/blob/v0.12/"
     "integrations/openlineage/facets/AIGPResourceInputFacet.json"
 )
 
@@ -104,7 +104,7 @@ def build_governance_run_facet(aigp_event: dict[str, Any]) -> dict[str, Any]:
         "leafCount": leaf_count,
         "agentId": aigp_event.get("agent_id", ""),
         "traceId": aigp_event.get("trace_id", ""),
-        "specVersion": aigp_event.get("spec_version", "0.11"),
+        "specVersion": aigp_event.get("spec_version", "0.12"),
     }
 
     # Infer enforcement result from event type (case-insensitive)

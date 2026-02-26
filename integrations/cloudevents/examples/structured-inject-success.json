@@ -31,6 +31,6 @@
       "regulatory_framework": "SEC Rule 15c3-5",
       "risk_tier": "high"
     },
-    "spec_version": "0.11"
+    "spec_version": "0.12"
   }
 }

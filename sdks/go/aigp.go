@@ -554,7 +554,7 @@ func CreateAIGPEvent(opts CreateEventOptions) (AIGPEvent, error) {
 
 	specVersion := opts.SpecVersion
 	if specVersion == "" {
-		specVersion = "0.11"
+		specVersion = "0.12"
 	}
 
 	sequenceNumber := opts.SequenceNumber

@@ -34,6 +34,6 @@
     "tool_version": 2,
     "input_summary": "order_id=ORD-12345"
   },
-  "spec_version": "0.11",
+  "spec_version": "0.12",
   "sequence_number": 1
 }

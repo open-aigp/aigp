@@ -3,7 +3,7 @@ title: AIGP
 layout: default
 ---
 
-# AIGP v0.11
+# AIGP v0.12
 
 Open standard for cryptographic AI governance proof events.
 
@@ -14,14 +14,14 @@ Open standard for cryptographic AI governance proof events.
 - Repository source: [`schema/aigp-event.v0.12.schema.json`](https://github.com/open-aigp/aigp/blob/main/schema/aigp-event.v0.12.schema.json)
 
 
-## New In v0.11
+## New In v0.12
 
 - Salted-proof metadata (`is_salted`, `salt_ref`) for privacy-sensitive verification
 - Streaming interruption metadata (`is_partial`, `offset_unit`, `offset`) for partial-output evidence
 - Stable verifier finding IDs for ordering, signature, and Merkle failures
 - Machine-readable verifier report schema (`schema/aigp-verifier-report.schema.json`)
 
-## v0.11 Implementation Status
+## v0.12 Implementation Status
 
 | Area | Implemented | Status |
 |---|---|---|
@@ -29,8 +29,8 @@ Open standard for cryptographic AI governance proof events.
 | Streaming interruption evidence | Optional `is_partial` + `offset_unit` + `offset` on Merkle leaves | Done |
 | Auditor finding taxonomy | Stable IDs for ordering, signature, and Merkle findings | Done |
 | Verifier report contract | JSON Schema for machine-readable verifier output | Done |
-| Wire schemas | Protobuf + JSON Schema updated for v0.11 fields | Done |
-| Documentation and examples | Spec/README/docs/examples/changelog aligned to `0.11` | Done |
+| Wire schemas | Protobuf + JSON Schema updated for v0.12 fields | Done |
+| Documentation and examples | Spec/README/docs/examples/changelog aligned to `0.12` | Done |
 
 ## Known Gaps (Transparent by Design)
 
@@ -250,7 +250,7 @@ For governance proof, AIGP plays a role similar to what OpenTelemetry plays for 
 - **OpenLineage**: AIGP attaches governance context to lineage via open facets.
 - **JSON Schema + Protobuf**: AIGP keeps open, language-neutral contracts for validation and codegen.
 
-## AIGP v0.11 Event Example
+## AIGP v0.12 Event Example
 
 ```json
 {
@@ -262,7 +262,7 @@ For governance proof, AIGP plays a role similar to what OpenTelemetry plays for 
   "governance_hash": "8dd4648db4f94db951f83bb70fa7b575533912f4fd3219d161384df2b8d523ec",
   "hash_type": "merkle-sha256",
   "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
-  "spec_version": "0.11",
+  "spec_version": "0.12",
   "governance_merkle_tree": {
     "algorithm": "sha256",
     "leaf_count": 2,

@@ -1,7 +1,7 @@
 # AI Governance Proof (AIGP)&trade;
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](./LICENSE)
-[![Spec](https://img.shields.io/badge/Spec-v0.11-violet.svg)](./spec/aigp-spec.md)
+[![Spec](https://img.shields.io/badge/Spec-v0.12-violet.svg)](./spec/aigp-spec.md)
 [![Schema](https://img.shields.io/badge/JSON_Schema-valid-green.svg)](./schema/aigp-event.schema.json)
 [![OTel](https://img.shields.io/badge/OpenTelemetry-compatible-orange.svg)](./integrations/opentelemetry/semantic-conventions.md)
 [![OpenLineage](https://img.shields.io/badge/OpenLineage-compatible-blueviolet.svg)](./integrations/openlineage/semantic-conventions.md)
@@ -294,14 +294,14 @@ For a full, color-coded audit-viewer topology with findings guidance, see [`docs
 4. **Flat and queryable.** Single wide event table — no joins for governance queries. Designed for OLAP stores.
 5. **Forward-compatible extensibility.** Two primitives: **Resources** (governed, hashed, in the Merkle tree) and **Annotations** (informational, unhashed). Open resource types — implementations define custom types without a spec change. Consumers ignore what they don't recognize.
 
-### What's New in v0.11
+### What's New in v0.12
 
 - **Salted proof metadata** — optional Merkle leaf fields `is_salted` and `salt_ref` to support privacy-sensitive verification patterns
 - **Streaming interruption proof metadata** — optional leaf fields `is_partial`, `offset_unit`, and `offset` for mid-stream block evidence
 - **Auditor-ready finding taxonomy** — stable verifier finding IDs for ordering, signature, and Merkle failures
 - **Verifier report schema** — machine-readable contract at `schema/aigp-verifier-report.schema.json`
 
-### v0.11 Implementation Status
+### v0.12 Implementation Status
 
 | Area | Implemented | Status |
 |---|---|---|
@@ -309,8 +309,8 @@ For a full, color-coded audit-viewer topology with findings guidance, see [`docs
 | Streaming interruption evidence | Optional `is_partial` + `offset_unit` + `offset` on Merkle leaves | Done |
 | Auditor finding taxonomy | Stable IDs for ordering, signature, and Merkle findings | Done |
 | Verifier report contract | JSON Schema for machine-readable verifier output | Done |
-| Wire schemas | Protobuf + JSON Schema updated for v0.11 fields | Done |
-| Documentation and examples | Spec/README/docs/examples/changelog aligned to `0.11` | Done |
+| Wire schemas | Protobuf + JSON Schema updated for v0.12 fields | Done |
+| Documentation and examples | Spec/README/docs/examples/changelog aligned to `0.12` | Done |
 
 Running implementation ledger: [`docs/implementation-record.md`](./docs/implementation-record.md)
 
@@ -419,7 +419,7 @@ A trading bot successfully receives a governed policy:
   "data_classification": "confidential",
   "template_rendered": true,
   "annotations": {"regulatory_hooks": ["FINRA", "SEC"]},
-  "spec_version": "0.11"
+  "spec_version": "0.12"
 }
 ```
 
@@ -480,7 +480,7 @@ event = instrumentor.inject_success(
 
 ## OpenLineage Integration
 
-AIGP connects AI governance proof to data lineage via OpenLineage custom facets. Seven governed resource types — policy, prompt, tool, lineage, context, memory, model — are hashed as Merkle leaves, providing tamper-proof evidence of the complete governance context. The `"memory"` resource type captures agent dynamic state (conversation history, RAG results), while `"model"` captures inference engine identity (model card, weights hash). In v0.11, the **Pointer Pattern** (`hash_mode` + `content_ref`), optional **Merkle inclusion proofs** (`inclusion_proofs`), and optional privacy/streaming leaf metadata (`is_salted`, `salt_ref`, `is_partial`, `offset_unit`, `offset`) support scalable governance verification for large, sensitive, and streaming workloads.
+AIGP connects AI governance proof to data lineage via OpenLineage custom facets. Seven governed resource types — policy, prompt, tool, lineage, context, memory, model — are hashed as Merkle leaves, providing tamper-proof evidence of the complete governance context. The `"memory"` resource type captures agent dynamic state (conversation history, RAG results), while `"model"` captures inference engine identity (model card, weights hash). In v0.12, the **Pointer Pattern** (`hash_mode` + `content_ref`), optional **Merkle inclusion proofs** (`inclusion_proofs`), and optional privacy/streaming leaf metadata (`is_salted`, `salt_ref`, `is_partial`, `offset_unit`, `offset`) support scalable governance verification for large, sensitive, and streaming workloads.
 
 | Layer | Standard | What It Shows | Backend |
 |---|---|---|---|

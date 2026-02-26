@@ -218,7 +218,7 @@ data class CreateEventOptions(
     val signatureKeyId: String = "",
     val sequenceNumber: Long = 0,
     val causalityRef: String = "",
-    val specVersion: String = "0.11",
+    val specVersion: String = "0.12",
     val governanceMerkleTree: GovernanceMerkleTree? = null,
 )
 

@@ -33,7 +33,7 @@
       "PCI-DSS"
     ]
   },
-  "spec_version": "0.11",
+  "spec_version": "0.12",
   "governance_merkle_tree": {
     "algorithm": "sha256",
     "leaf_count": 9,

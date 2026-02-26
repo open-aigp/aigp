@@ -65,6 +65,6 @@
       "risk_tier": "high",
       "review_required": true
     },
-    "spec_version": "0.11"
+    "spec_version": "0.12"
   }
 }

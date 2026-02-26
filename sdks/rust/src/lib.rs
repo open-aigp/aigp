@@ -928,7 +928,7 @@ pub fn create_aigp_event(options: CreateEventOptions) -> Result<AIGPEvent, Strin
         signature_key_id: options.signature_key_id.unwrap_or_default(),
         sequence_number,
         causality_ref: options.causality_ref.unwrap_or_default(),
-        spec_version: options.spec_version.unwrap_or_else(|| "0.11".to_string()),
+        spec_version: options.spec_version.unwrap_or_else(|| "0.12".to_string()),
         governance_merkle_tree: options.governance_merkle_tree,
     })
 }
@@ -1742,7 +1742,7 @@ mod tests {
         assert_eq!(event.event_type, "INJECT_SUCCESS");
         assert_eq!(event.event_category, "inject");
         assert_eq!(event.trace_id.len(), 32);
-        assert_eq!(event.spec_version, "0.11");
+        assert_eq!(event.spec_version, "0.12");
         assert!(validate_aigp_event(&event).is_empty());
     }
 
@@ -1933,7 +1933,7 @@ mod tests {
             signature_key_id: "".to_string(),
             sequence_number: 1,
             causality_ref: "".to_string(),
-            spec_version: "0.11".to_string(),
+            spec_version: "0.12".to_string(),
             governance_merkle_tree: None,
         };
 

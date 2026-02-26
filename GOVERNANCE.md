@@ -63,7 +63,7 @@ The AIGP specification and normative schemas follow a SemVer-compatible `MAJOR.M
 - **MAJOR** for incompatible changes.
 - **MINOR** for backward-compatible additions (new fields, event types, profile rules, guidance).
 
-When needed for implementation packages, repositories MAY publish patch/package versions independently, but the normative spec line remains `MAJOR.MINOR` (for example, `0.11`).
+When needed for implementation packages, repositories MAY publish patch/package versions independently, but the normative spec line remains `MAJOR.MINOR` (for example, `0.12`).
 
 ## Release Process
 

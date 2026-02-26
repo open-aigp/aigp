@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Specification line advanced to `0.12`; spec, schema docs, examples, SDK defaults, and integration companion docs aligned.
 - Repository topology split into dedicated repos:
   - `open-aigp/aigp` (spec, schema, conformance)
   - `open-aigp/aigp-sdks` (all language SDKs)

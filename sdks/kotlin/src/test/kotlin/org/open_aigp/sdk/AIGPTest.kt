@@ -36,7 +36,7 @@ class AIGPTest {
         assertEquals("INJECT_SUCCESS", event.eventType)
         assertEquals("inject", event.eventCategory)
         assertTrue(event.traceId.matches(Regex("^[a-f0-9]{32}$")))
-        assertEquals("0.11", event.specVersion)
+        assertEquals("0.12", event.specVersion)
         assertEquals(0, validateAIGPEvent(event).size)
     }
 

@@ -804,7 +804,7 @@ public final class AIGP {
             ? options.sequenceNumber
             : nextSequenceNumber(event.agentId, event.traceId);
         event.causalityRef = nullToEmpty(options.causalityRef);
-        event.specVersion = isBlank(options.specVersion) ? "0.11" : options.specVersion;
+        event.specVersion = isBlank(options.specVersion) ? "0.12" : options.specVersion;
         event.governanceMerkleTree = options.governanceMerkleTree;
 
         return event;
