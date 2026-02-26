@@ -49,12 +49,14 @@
           "resource_type": "policy",
           "resource_name": "policy.trading-limits",
           "hash": "4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e",
+          "template_hash": "3d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e",
           "hash_mode": "content"
         },
         {
           "resource_type": "prompt",
           "resource_name": "prompt.scoring-v3",
           "hash": "5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f",
+          "template_hash": "6e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f",
           "hash_mode": "content"
         }
       ]

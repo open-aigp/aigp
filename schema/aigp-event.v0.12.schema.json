@@ -192,6 +192,7 @@
                   "enum": [
                     "policy",
                     "prompt",
+                    "dynamic_prompt",
                     "tool",
                     "context",
                     "model"
@@ -212,7 +213,36 @@
                   "type": "object",
                   "additionalProperties": true
                 }
-              }
+              },
+              "allOf": [
+                {
+                  "if": {
+                    "required": [
+                      "resource_type"
+                    ],
+                    "properties": {
+                      "resource_type": {
+                        "enum": [
+                          "policy",
+                          "prompt",
+                          "dynamic_prompt",
+                          "tool"
+                        ]
+                      }
+                    }
+                  },
+                  "then": {
+                    "required": [
+                      "template_hash"
+                    ],
+                    "properties": {
+                      "template_hash": {
+                        "minLength": 1
+                      }
+                    }
+                  }
+                }
+              ]
             }
           },
           "inclusion_proofs": {

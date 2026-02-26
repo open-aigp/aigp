@@ -47,6 +47,7 @@
         "resource_type": "policy",
         "resource_name": "policy.toxicity-filter",
         "hash": "a1b2c3d4a5b697887766554433221100ffeeddccbbaa99887766554433221100",
+        "template_hash": "b1b2c3d4a5b697887766554433221100ffeeddccbbaa99887766554433221100",
         "hash_mode": "content"
       },
       {

@@ -229,7 +229,7 @@ AIGP events SHOULD use a flat (non-nested) record structure. All governance-rele
 **Principle 5: Forward-Compatible Extensibility.**
 AIGP provides two extensibility primitives with distinct trust boundaries:
 
-- **Resources** are AIGP's governed extensibility primitive. Every governed artifact (policy, prompt, tool, lineage, context, memory, or any implementation-defined type) is a resource that participates in the Merkle tree and receives a cryptographic hash. The `resource_type` field is an open pattern — implementations MAY define custom resource types without a specification change. Consumers MUST ignore resource types they do not recognize.
+- **Resources** are AIGP's governed extensibility primitive. Every governed artifact (policy, prompt, dynamic_prompt, tool, lineage, context, memory, or any implementation-defined type) is a resource that participates in the Merkle tree and receives a cryptographic hash. The `resource_type` field is an open pattern — implementations MAY define custom resource types without a specification change. Consumers MUST ignore resource types they do not recognize.
 - **Annotations** are AIGP's informational extensibility primitive. The `annotations` field carries supplementary context (regulatory hooks, domain-specific tags, operational notes) that is NOT included in governance hashes and is NOT governed. Consumers MUST ignore annotation keys they do not recognize.
 
 Minor version increments (e.g., 0.6 → 0.7) MUST be additive-only: they MUST NOT remove, rename, or change the semantics of existing fields, resource types, or event types. New fields, resource types, and event types MAY be added.
@@ -750,7 +750,7 @@ leaf_hash = SHA-256(UTF-8(resource_type + ":" + resource_name + ":" + content))
 ```
 
 Where:
-- `resource_type` MUST match the pattern `^[a-z][a-z0-9]*(-[a-z0-9]+)*$`. Standard types defined by this specification are `"policy"`, `"prompt"`, `"tool"`, `"lineage"`, `"context"`, `"memory"`, and `"model"`. Implementations MAY define custom resource types matching this pattern. Consumers MUST ignore resource types they do not recognize.
+- `resource_type` MUST match the pattern `^[a-z][a-z0-9_]*(-[a-z0-9_]+)*$`. Standard types defined by this specification are `"policy"`, `"prompt"`, `"dynamic_prompt"`, `"tool"`, `"lineage"`, `"context"`, `"memory"`, and `"model"`. Implementations MAY define custom resource types matching this pattern. Consumers MUST ignore resource types they do not recognize.
 - `resource_name` is the AGRN-format name (e.g., `"policy.trading-limits"`, `"memory.conversation-history"`, `"model.gpt4-trading-v2"`).
 - `content` is the governed content string for that resource.
 - The `":"` separator is the literal colon character (U+003A).
@@ -811,17 +811,20 @@ When `hash_type` is `"merkle-sha256"`, the event SHOULD include a top-level `gov
       {
         "resource_type": "policy",
         "resource_name": "policy.refund-limits",
-        "hash": "1a2b3c4d..."
+        "hash": "1a2b3c4d...",
+        "template_hash": "0a1b2c3d..."
       },
       {
         "resource_type": "prompt",
         "resource_name": "prompt.customer-support-v3",
-        "hash": "5e6f7a8b..."
+        "hash": "5e6f7a8b...",
+        "template_hash": "4e5f6a7b..."
       },
       {
         "resource_type": "tool",
         "resource_name": "tool.order-lookup",
-        "hash": "9c0d1e2f..."
+        "hash": "9c0d1e2f...",
+        "template_hash": "7b8c9d0e..."
       },
       {
         "resource_type": "context",
@@ -865,9 +868,10 @@ When `hash_type` is `"merkle-sha256"`, the event SHOULD include a top-level `gov
 - `inclusion_proofs` — OPTIONAL array of Merkle inclusion proofs for selective verification.
 
 Each leaf object MUST contain:
-- `resource_type` — A string matching the pattern `^[a-z][a-z0-9]*(-[a-z0-9]+)*$`. Standard types are `"policy"`, `"prompt"`, `"tool"`, `"lineage"`, `"context"`, `"memory"`, and `"model"`. Custom types are permitted.
+- `resource_type` — A string matching the pattern `^[a-z][a-z0-9_]*(-[a-z0-9_]+)*$`. Standard types are `"policy"`, `"prompt"`, `"dynamic_prompt"`, `"tool"`, `"lineage"`, `"context"`, `"memory"`, and `"model"`. Custom types are permitted.
 - `resource_name` — AGRN-format resource name.
 - `hash` — The 64-character lowercase hexadecimal leaf hash computed per Section 8.8.2.
+- `template_hash` — REQUIRED when `resource_type` is `"policy"`, `"prompt"`, `"dynamic_prompt"`, or `"tool"`. Must be a 64-character lowercase hexadecimal SHA-256 hash of the approved template/config baseline.
 
 Each leaf object MAY additionally include:
 - `hash_mode` — `"content"` (default) or `"pointer"`.

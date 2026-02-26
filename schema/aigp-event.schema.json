@@ -315,8 +315,8 @@
             "properties": {
               "resource_type": {
                 "type": "string",
-                "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$",
-                "description": "Type of governed resource. Standard types: policy, prompt, tool, lineage, context, memory, model. Implementations MAY define custom types matching this pattern. Consumers MUST ignore resource types they do not recognize."
+                "pattern": "^[a-z][a-z0-9_]*(-[a-z0-9_]+)*$",
+                "description": "Type of governed resource. Standard types: policy, prompt, dynamic_prompt, tool, lineage, context, memory, model. Implementations MAY define custom types matching this pattern. Consumers MUST ignore resource types they do not recognize."
               },
               "resource_name": {
                 "type": "string",
@@ -327,6 +327,11 @@
                 "type": "string",
                 "pattern": "^[a-f0-9]{64}$",
                 "description": "SHA-256 leaf hash. Default derivation is SHA-256(resource_type + ':' + resource_name + ':' + content). Pointer and salted extensions are defined by hash_mode/is_salted metadata."
+              },
+              "template_hash": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$",
+                "description": "SHA-256 hash of the approved template/config baseline for this resource. REQUIRED when resource_type is policy, prompt, dynamic_prompt, or tool. MAY be provided for other resource types."
               },
               "hash_mode": {
                 "type": "string",
@@ -367,6 +372,22 @@
               }
             },
             "allOf": [
+              {
+                "if": {
+                  "required": ["resource_type"],
+                  "properties": {
+                    "resource_type": {
+                      "enum": ["policy", "prompt", "dynamic_prompt", "tool"]
+                    }
+                  }
+                },
+                "then": {
+                  "required": ["template_hash"],
+                  "properties": {
+                    "template_hash": { "minLength": 1 }
+                  }
+                }
+              },
               {
                 "if": {
                   "required": ["hash_mode"],

@@ -47,6 +47,7 @@
         "resource_type": "policy",
         "resource_name": "policy.phi-access-controls",
         "hash": "11aa22bb33cc44dd55ee66ff7788990011aa22bb33cc44dd55ee66ff77889900",
+        "template_hash": "21aa22bb33cc44dd55ee66ff7788990011aa22bb33cc44dd55ee66ff77889900",
         "hash_mode": "content"
       },
       {

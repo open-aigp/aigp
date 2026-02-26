@@ -41,12 +41,14 @@
       {
         "resource_type": "policy",
         "resource_name": "policy.refund-limits",
-        "hash": "1138149eb8ee4355ad80ee3c02a93c46a2b82c8976eaa9ba7c304b740cc6921a"
+        "hash": "1138149eb8ee4355ad80ee3c02a93c46a2b82c8976eaa9ba7c304b740cc6921a",
+        "template_hash": "0138149eb8ee4355ad80ee3c02a93c46a2b82c8976eaa9ba7c304b740cc6921a"
       },
       {
         "resource_type": "policy",
         "resource_name": "policy.customer-privacy",
-        "hash": "16ec2355054a1f60f476c20f54ccfa6056b0b224a6582a19307a3b9eabc8bfec"
+        "hash": "16ec2355054a1f60f476c20f54ccfa6056b0b224a6582a19307a3b9eabc8bfec",
+        "template_hash": "26ec2355054a1f60f476c20f54ccfa6056b0b224a6582a19307a3b9eabc8bfec"
       },
       {
         "resource_type": "context",
@@ -61,12 +63,14 @@
       {
         "resource_type": "tool",
         "resource_name": "tool.order-lookup",
-        "hash": "5769525038c226978cb78b401f0c62c00442b5b6c48f0a9cb9a7cff504f75366"
+        "hash": "5769525038c226978cb78b401f0c62c00442b5b6c48f0a9cb9a7cff504f75366",
+        "template_hash": "1769525038c226978cb78b401f0c62c00442b5b6c48f0a9cb9a7cff504f75366"
       },
       {
         "resource_type": "prompt",
         "resource_name": "prompt.customer-support-v3",
-        "hash": "6db68d9c3b408fc19a6b38cc7ab2e2ad5de15cd2017dac4496ccc34c1d1f7329"
+        "hash": "6db68d9c3b408fc19a6b38cc7ab2e2ad5de15cd2017dac4496ccc34c1d1f7329",
+        "template_hash": "5db68d9c3b408fc19a6b38cc7ab2e2ad5de15cd2017dac4496ccc34c1d1f7329"
       },
       {
         "resource_type": "model",
@@ -81,7 +85,8 @@
       {
         "resource_type": "tool",
         "resource_name": "tool.refund-processor",
-        "hash": "a3adf99f87cac0f3acd8b7bdf9dd7681bee4b4bf7bd2dfbc0c81f87deb29c9ff"
+        "hash": "a3adf99f87cac0f3acd8b7bdf9dd7681bee4b4bf7bd2dfbc0c81f87deb29c9ff",
+        "template_hash": "b3adf99f87cac0f3acd8b7bdf9dd7681bee4b4bf7bd2dfbc0c81f87deb29c9ff"
       }
     ],
     "inclusion_proofs": [
