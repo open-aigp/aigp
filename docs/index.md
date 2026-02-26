@@ -7,6 +7,13 @@ layout: default
 
 Open standard for cryptographic AI governance proof events.
 
+## v0.12 Schema Preview
+
+- Formatted JSON Schema: [`/schema/aigp-event.v0.12.schema.json`](https://open-aigp.org/schema/aigp-event.v0.12.schema.json)
+- Documentation page: [`/schema-v0.12`](https://open-aigp.org/schema-v0.12)
+- Repository source: [`schema/aigp-event.v0.12.schema.json`](https://github.com/open-aigp/aigp/blob/main/schema/aigp-event.v0.12.schema.json)
+
+
 ## New In v0.11
 
 - Salted-proof metadata (`is_salted`, `salt_ref`) for privacy-sensitive verification

@@ -1,0 +1,269 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://open-aigp.org/schema/v0.12/aigp-event.schema.json",
+  "title": "AIGP Event",
+  "description": "AI Governance Proof event — the core telemetry record for AIGP v0.12. Every governance action produces exactly one AIGPEvent.",
+  "type": "object",
+  "properties": {
+    "spec_version": {
+      "type": "string",
+      "const": "0.12",
+      "description": "AIGP specification version"
+    },
+    "source": {
+      "type": "string",
+      "format": "uri-reference",
+      "minLength": 1,
+      "description": "CloudEvents REQUIRED: URI-reference identifying the event producer (e.g. aigp://org-id/agent-id)"
+    },
+    "event_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique event identifier (UUID v4)"
+    },
+    "event_type": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Event type string (e.g. GOVERNANCE_PROOF, POLICY_LOADED, POLICY_VIOLATION)"
+    },
+    "event_category": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Grouping category (e.g. governance-proof, inject, violation)"
+    },
+    "event_time": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when the event occurred"
+    },
+    "ingested_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when the platform recorded the event"
+    },
+    "tenant_id": {
+      "type": "string",
+      "description": "UUID of the owning tenant (multi-tenant isolation)"
+    },
+    "tenant_name": {
+      "type": "string",
+      "description": "Human-readable tenant name"
+    },
+    "org_id": {
+      "type": "string",
+      "description": "Organization UUID"
+    },
+    "org_name": {
+      "type": "string",
+      "description": "Organization name"
+    },
+    "agent_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Agent UUID or AGRN"
+    },
+    "agent_name": {
+      "type": "string",
+      "description": "Agent display name"
+    },
+    "trace_id": {
+      "type": "string",
+      "description": "W3C Trace Context: 32-char hex trace identifier",
+      "oneOf": [
+        {
+          "const": ""
+        },
+        {
+          "pattern": "^[0-9a-f]{32}$"
+        }
+      ]
+    },
+    "span_id": {
+      "type": "string",
+      "description": "W3C Trace Context: 16-char hex span identifier",
+      "oneOf": [
+        {
+          "const": ""
+        },
+        {
+          "pattern": "^[0-9a-f]{16}$"
+        }
+      ]
+    },
+    "parent_span_id": {
+      "type": "string",
+      "description": "W3C Trace Context: parent span ID for distributed tracing"
+    },
+    "trace_flags": {
+      "type": "string",
+      "description": "W3C trace flags ('00' = governance, unconditionally recorded)"
+    },
+    "sequence_number": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Monotonic counter per agent_id:trace_id"
+    },
+    "causality_ref": {
+      "type": "string",
+      "description": "Event ID of the causally preceding event"
+    },
+    "parent_hash": {
+      "type": "string",
+      "description": "SHA-256 of previous event (tamper-evident chain link)",
+      "oneOf": [
+        {
+          "const": ""
+        },
+        {
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      ]
+    },
+    "data_classification": {
+      "type": "string",
+      "description": "Sensitivity level (e.g. PUBLIC, INTERNAL, CONFIDENTIAL, RESTRICTED)"
+    },
+    "denial_reason": {
+      "type": "string",
+      "description": "Human-readable denial explanation (empty if allowed)"
+    },
+    "violation_type": {
+      "type": "string",
+      "description": "Violation taxonomy (e.g. PII_DETECTED, RATE_LIMIT_EXCEEDED)"
+    },
+    "severity": {
+      "type": "string",
+      "description": "Severity level (e.g. info, warning, critical)"
+    },
+    "governance_hash": {
+      "type": "string",
+      "description": "Primary SHA-256 governance hash",
+      "oneOf": [
+        {
+          "const": ""
+        },
+        {
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      ]
+    },
+    "hash_type": {
+      "type": "string",
+      "default": "sha256",
+      "description": "Hash algorithm used"
+    },
+    "aigp_hash": {
+      "type": "string",
+      "description": "Master AIGP integrity hash (Merkle root)",
+      "oneOf": [
+        {
+          "const": ""
+        },
+        {
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      ]
+    },
+    "governance_merkle_tree": {
+      "type": "string",
+      "description": "JSON-encoded governance Merkle tree with resource hashes and proofs. Wire format is a string; parse to access structured content.",
+      "contentMediaType": "application/json",
+      "contentSchema": {
+        "type": "object",
+        "properties": {
+          "algorithm": {
+            "type": "string"
+          },
+          "leaf_count": {
+            "type": "integer"
+          },
+          "resources": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "resource_type",
+                "resource_name",
+                "hash"
+              ],
+              "properties": {
+                "resource_type": {
+                  "type": "string",
+                  "enum": [
+                    "policy",
+                    "prompt",
+                    "tool",
+                    "context",
+                    "model"
+                  ]
+                },
+                "resource_name": {
+                  "type": "string"
+                },
+                "hash": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                "template_hash": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                "resource_metadata": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "inclusion_proofs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "event_signature": {
+      "type": "string",
+      "description": "JWS ES256 compact serialization of the canonical event"
+    },
+    "signature_key_id": {
+      "type": "string",
+      "description": "Key ID used for event signing"
+    },
+    "annotations": {
+      "type": "string",
+      "description": "JSON-encoded extensibility envelope: { signed: {...}, unsigned: {...} }. signed is in event_signature scope (RFC 8785 JCS). Wire format is a string; parse to access structured content.",
+      "contentMediaType": "application/json",
+      "contentSchema": {
+        "type": "object",
+        "properties": {
+          "signed": {
+            "type": "object",
+            "description": "Included in event_signature scope. Cryptographically trusted governance claims.",
+            "additionalProperties": true
+          },
+          "unsigned": {
+            "type": "object",
+            "description": "Excluded from event_signature. Mutable operational counters and display hints.",
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "spec_version",
+    "source",
+    "event_id",
+    "event_type",
+    "event_category",
+    "event_time",
+    "agent_id",
+    "trace_id",
+    "governance_hash"
+  ],
+  "additionalProperties": false
+}
