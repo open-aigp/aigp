@@ -41,8 +41,8 @@
   "spec_version": "0.12",
   "governance_merkle_tree": {
     "algorithm": "sha256",
-    "leaf_count": 2,
-    "leaves": [
+    "resource_count": 2,
+    "resources": [
       {
         "resource_type": "policy",
         "resource_name": "policy.toxicity-filter",

@@ -19,9 +19,9 @@ import org.junit.jupiter.api.Test;
 class AIGPTest {
 
     @Test
-    void normalizeEventTypeMapsAliases() {
-        assertEquals("INJECT_SUCCESS", AIGP.normalizeEventType("governance.policy.delivered"));
-        assertEquals("PROMPT_DENIED", AIGP.normalizeEventType("governance.prompt.denied"));
+    void normalizeEventTypeNormalizesDottedNames() {
+        assertEquals("GOVERNANCE_POLICY_DELIVERED", AIGP.normalizeEventType("governance.policy.delivered"));
+        assertEquals("GOVERNANCE_PROMPT_DENIED", AIGP.normalizeEventType("governance.prompt.denied"));
     }
 
     @Test
@@ -32,7 +32,7 @@ class AIGPTest {
     @Test
     void createAndValidateEvent() {
         AIGP.CreateEventOptions options = new AIGP.CreateEventOptions();
-        options.eventType = "governance.policy.delivered";
+        options.eventType = "INJECT_SUCCESS";
         options.eventCategory = "Inject";
         options.agentId = "agent.test";
         options.governanceHash = AIGP.computeGovernanceHash("policy", "sha256");
@@ -56,7 +56,7 @@ class AIGPTest {
         AIGP.Resource prompt = new AIGP.Resource("prompt", "prompt.system", "You are a trading assistant");
         AIGP.MerkleResult multi = AIGP.computeMerkleGovernanceHash(Arrays.asList(policy, prompt));
         assertNotNull(multi.merkleTree);
-        assertEquals(2, multi.merkleTree.leafCount);
+        assertEquals(2, multi.merkleTree.resourceCount);
         assertNotNull(multi.rootHash);
     }
 

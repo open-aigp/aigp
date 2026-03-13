@@ -11,7 +11,7 @@
         "_schemaURL": "https://github.com/open-aigp/aigp/blob/v0.12/integrations/openlineage/facets/AIGPGovernanceRunFacet.json",
         "governanceHash": "8dd4648db4f94db951f83bb70fa7b575533912f4fd3219d161384df2b8d523ec",
         "hashType": "merkle-sha256",
-        "leafCount": 5,
+        "resourceCount": 5,
         "agentId": "agent.credit-scorer-v2",
         "traceId": "4bf92f3577b34da6a3ce929d0e0e4736",
         "enforcementResult": "allowed",

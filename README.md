@@ -305,8 +305,8 @@ For a full, color-coded audit-viewer topology with findings guidance, see [`docs
 
 | Area | Implemented | Status |
 |---|---|---|
-| Privacy-preserving proof metadata | Optional `is_salted` + `salt_ref` on Merkle leaves | Done |
-| Streaming interruption evidence | Optional `is_partial` + `offset_unit` + `offset` on Merkle leaves | Done |
+| Privacy-preserving proof metadata | Optional `is_salted` + `salt_ref` on Merkle resources | Done |
+| Streaming interruption evidence | Optional `is_partial` + `offset_unit` + `offset` on Merkle resources | Done |
 | Auditor finding taxonomy | Stable IDs for ordering, signature, and Merkle findings | Done |
 | Verifier report contract | JSON Schema for machine-readable verifier output | Done |
 | Wire schemas | Protobuf + JSON Schema updated for v0.12 fields | Done |
@@ -480,7 +480,7 @@ event = instrumentor.inject_success(
 
 ## OpenLineage Integration
 
-AIGP connects AI governance proof to data lineage via OpenLineage custom facets. Seven governed resource types — policy, prompt, tool, lineage, context, memory, model — are hashed as Merkle leaves, providing tamper-proof evidence of the complete governance context. The `"memory"` resource type captures agent dynamic state (conversation history, RAG results), while `"model"` captures inference engine identity (model card, weights hash). In v0.12, the **Pointer Pattern** (`hash_mode` + `content_ref`), optional **Merkle inclusion proofs** (`inclusion_proofs`), and optional privacy/streaming leaf metadata (`is_salted`, `salt_ref`, `is_partial`, `offset_unit`, `offset`) support scalable governance verification for large, sensitive, and streaming workloads.
+AIGP connects AI governance proof to data lineage via OpenLineage custom facets. Seven governed resource types — policy, prompt, tool, lineage, context, memory, model — are hashed into a Merkle tree, providing tamper-proof evidence of the complete governance context. The `"memory"` resource type captures agent dynamic state (conversation history, RAG results), while `"model"` captures inference engine identity (model card, weights hash). In v0.12, the **Pointer Pattern** (`hash_mode` + `content_ref`), optional **Merkle inclusion proofs** (`inclusion_proofs`), and optional privacy/streaming resource metadata (`is_salted`, `salt_ref`, `is_partial`, `offset_unit`, `offset`) support scalable governance verification for large, sensitive, and streaming workloads.
 
 | Layer | Standard | What It Shows | Backend |
 |---|---|---|---|

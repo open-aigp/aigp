@@ -2,298 +2,481 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://open-aigp.org/schema/v0.12/aigp-event.schema.json",
   "title": "AIGP Event",
-  "description": "AI Governance Proof event — the core telemetry record for AIGP v0.12. Every governance action produces exactly one AIGPEvent.",
+  "description": "AI Governance Proof (AIGP) event schema v0.12 — an open specification for capturing cryptographic proof of every AI agent governance action. Includes OpenTelemetry integration fields for native distributed tracing correlation, Merkle tree governance hash for multi-resource verification, salted-proof metadata for privacy-sensitive resources, stream interruption metadata for partial-output governance evidence, OpenLineage data lineage integration, memory governance, model identity tracking, event signing for non-repudiation, causal ordering for distributed agent pipelines, boundary events for ungoverned system visibility, and pointer pattern for large-content performance.",
   "type": "object",
-  "properties": {
-    "spec_version": {
-      "type": "string",
-      "const": "0.12",
-      "description": "AIGP specification version"
-    },
-    "source": {
-      "type": "string",
-      "format": "uri-reference",
-      "minLength": 1,
-      "description": "CloudEvents REQUIRED: URI-reference identifying the event producer (e.g. aigp://org-id/agent-id)"
-    },
-    "event_id": {
-      "type": "string",
-      "format": "uuid",
-      "description": "Unique event identifier (UUID v4)"
-    },
-    "event_type": {
-      "type": "string",
-      "minLength": 1,
-      "description": "Event type string (e.g. GOVERNANCE_PROOF, POLICY_LOADED, POLICY_VIOLATION)"
-    },
-    "event_category": {
-      "type": "string",
-      "minLength": 1,
-      "description": "Grouping category (e.g. governance-proof, inject, violation)"
-    },
-    "event_time": {
-      "type": "string",
-      "format": "date-time",
-      "description": "ISO 8601 timestamp when the event occurred"
-    },
-    "ingested_at": {
-      "type": "string",
-      "format": "date-time",
-      "description": "ISO 8601 timestamp when the platform recorded the event"
-    },
-    "tenant_id": {
-      "type": "string",
-      "description": "UUID of the owning tenant (multi-tenant isolation)"
-    },
-    "tenant_name": {
-      "type": "string",
-      "description": "Human-readable tenant name"
-    },
-    "org_id": {
-      "type": "string",
-      "description": "Organization UUID"
-    },
-    "org_name": {
-      "type": "string",
-      "description": "Organization name"
-    },
-    "agent_id": {
-      "type": "string",
-      "minLength": 1,
-      "description": "Agent UUID or AGRN"
-    },
-    "agent_name": {
-      "type": "string",
-      "description": "Agent display name"
-    },
-    "trace_id": {
-      "type": "string",
-      "description": "W3C Trace Context: 32-char hex trace identifier",
-      "oneOf": [
-        {
-          "const": ""
-        },
-        {
-          "pattern": "^[0-9a-f]{32}$"
-        }
-      ]
-    },
-    "span_id": {
-      "type": "string",
-      "description": "W3C Trace Context: 16-char hex span identifier",
-      "oneOf": [
-        {
-          "const": ""
-        },
-        {
-          "pattern": "^[0-9a-f]{16}$"
-        }
-      ]
-    },
-    "parent_span_id": {
-      "type": "string",
-      "description": "W3C Trace Context: parent span ID for distributed tracing"
-    },
-    "trace_flags": {
-      "type": "string",
-      "description": "W3C trace flags ('00' = governance, unconditionally recorded)"
-    },
-    "sequence_number": {
-      "type": "integer",
-      "minimum": 1,
-      "description": "Monotonic counter per agent_id:trace_id"
-    },
-    "causality_ref": {
-      "type": "string",
-      "description": "Event ID of the causally preceding event"
-    },
-    "parent_hash": {
-      "type": "string",
-      "description": "SHA-256 of previous event (tamper-evident chain link)",
-      "oneOf": [
-        {
-          "const": ""
-        },
-        {
-          "pattern": "^[0-9a-f]{64}$"
-        }
-      ]
-    },
-    "data_classification": {
-      "type": "string",
-      "description": "Sensitivity level (e.g. PUBLIC, INTERNAL, CONFIDENTIAL, RESTRICTED)"
-    },
-    "denial_reason": {
-      "type": "string",
-      "description": "Human-readable denial explanation (empty if allowed)"
-    },
-    "violation_type": {
-      "type": "string",
-      "description": "Violation taxonomy (e.g. PII_DETECTED, RATE_LIMIT_EXCEEDED)"
-    },
-    "severity": {
-      "type": "string",
-      "description": "Severity level (e.g. info, warning, critical)"
-    },
-    "governance_hash": {
-      "type": "string",
-      "description": "Primary SHA-256 governance hash",
-      "oneOf": [
-        {
-          "const": ""
-        },
-        {
-          "pattern": "^[0-9a-f]{64}$"
-        }
-      ]
-    },
-    "hash_type": {
-      "type": "string",
-      "default": "sha256",
-      "description": "Hash algorithm used"
-    },
-    "aigp_hash": {
-      "type": "string",
-      "description": "Master AIGP integrity hash (Merkle root)",
-      "oneOf": [
-        {
-          "const": ""
-        },
-        {
-          "pattern": "^[0-9a-f]{64}$"
-        }
-      ]
-    },
-    "governance_merkle_tree": {
-      "type": "string",
-      "description": "JSON-encoded governance Merkle tree with resource hashes and proofs. Wire format is a string; parse to access structured content.",
-      "contentMediaType": "application/json",
-      "contentSchema": {
-        "type": "object",
-        "properties": {
-          "algorithm": {
-            "type": "string"
-          },
-          "leaf_count": {
-            "type": "integer"
-          },
-          "resources": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "required": [
-                "resource_type",
-                "resource_name",
-                "hash"
-              ],
-              "properties": {
-                "resource_type": {
-                  "type": "string",
-                  "enum": [
-                    "policy",
-                    "prompt",
-                    "dynamic_prompt",
-                    "tool",
-                    "context",
-                    "model"
-                  ]
-                },
-                "resource_name": {
-                  "type": "string"
-                },
-                "hash": {
-                  "type": "string",
-                  "pattern": "^[0-9a-f]{64}$"
-                },
-                "template_hash": {
-                  "type": "string",
-                  "pattern": "^[0-9a-f]{64}$"
-                },
-                "resource_metadata": {
-                  "type": "object",
-                  "additionalProperties": true
-                }
-              },
-              "allOf": [
-                {
-                  "if": {
-                    "required": [
-                      "resource_type"
-                    ],
-                    "properties": {
-                      "resource_type": {
-                        "enum": [
-                          "policy",
-                          "prompt",
-                          "dynamic_prompt",
-                          "tool"
-                        ]
-                      }
-                    }
-                  },
-                  "then": {
-                    "required": [
-                      "template_hash"
-                    ],
-                    "properties": {
-                      "template_hash": {
-                        "minLength": 1
-                      }
-                    }
-                  }
-                }
-              ]
-            }
-          },
-          "inclusion_proofs": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        }
-      }
-    },
-    "event_signature": {
-      "type": "string",
-      "description": "JWS ES256 compact serialization of the canonical event"
-    },
-    "signature_key_id": {
-      "type": "string",
-      "description": "Key ID used for event signing"
-    },
-    "annotations": {
-      "type": "string",
-      "description": "JSON-encoded extensibility envelope: { signed: {...}, unsigned: {...} }. signed is in event_signature scope (RFC 8785 JCS). Wire format is a string; parse to access structured content.",
-      "contentMediaType": "application/json",
-      "contentSchema": {
-        "type": "object",
-        "properties": {
-          "signed": {
-            "type": "object",
-            "description": "Included in event_signature scope. Cryptographically trusted governance claims.",
-            "additionalProperties": true
-          },
-          "unsigned": {
-            "type": "object",
-            "description": "Excluded from event_signature. Mutable operational counters and display hints.",
-            "additionalProperties": true
-          }
-        },
-        "additionalProperties": false
-      }
-    }
-  },
   "required": [
-    "spec_version",
-    "source",
     "event_id",
     "event_type",
     "event_category",
     "event_time",
     "agent_id",
+    "governance_hash",
     "trace_id",
-    "governance_hash"
+    "sequence_number"
   ],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for this event (UUID v4)."
+    },
+    "event_type": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9_]*$",
+      "description": "What happened. Uses UPPER_SNAKE_CASE RESOURCE_ACTION convention.",
+      "examples": [
+        "INJECT_SUCCESS",
+        "INJECT_DENIED",
+        "PROMPT_USED",
+        "PROMPT_DENIED",
+        "AGENT_REGISTERED",
+        "AGENT_APPROVED",
+        "AGENT_DEACTIVATED",
+        "POLICY_CREATED",
+        "POLICY_VERSION_APPROVED",
+        "POLICY_ARCHIVED",
+        "PROMPT_VERSION_CREATED",
+        "PROMPT_VERSION_APPROVED",
+        "GOVERNANCE_PROOF",
+        "POLICY_VIOLATION",
+        "A2A_CALL",
+        "MEMORY_READ",
+        "MEMORY_WRITTEN",
+        "TOOL_INVOKED",
+        "TOOL_DENIED",
+        "CONTEXT_CAPTURED",
+        "LINEAGE_SNAPSHOT",
+        "INFERENCE_STARTED",
+        "INFERENCE_COMPLETED",
+        "INFERENCE_BLOCKED",
+        "HUMAN_OVERRIDE",
+        "HUMAN_APPROVAL",
+        "CLASSIFICATION_CHANGED",
+        "MODEL_LOADED",
+        "MODEL_SWITCHED",
+        "UNVERIFIED_BOUNDARY"
+      ]
+    },
+    "event_category": {
+      "type": "string",
+      "description": "Event grouping (e.g. inject, audit, agent-lifecycle, policy-lifecycle, prompt-lifecycle, governance-proof, policy, memory, tool, context, lineage, inference, human, classification, model, boundary).",
+      "examples": [
+        "inject",
+        "audit",
+        "agent-lifecycle",
+        "policy-lifecycle",
+        "prompt-lifecycle",
+        "governance-proof",
+        "policy",
+        "a2a",
+        "memory",
+        "tool",
+        "context",
+        "lineage",
+        "inference",
+        "human",
+        "classification",
+        "model",
+        "boundary"
+      ]
+    },
+    "event_time": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the governance action occurred (UTC, ISO 8601, millisecond precision)."
+    },
+
+    "agent_id": {
+      "type": "string",
+      "description": "The agent that triggered this governance action. Should follow AGRN format: agent.<kebab-name>.",
+      "examples": ["agent.trading-bot-v2", "agent.customer-support"]
+    },
+    "agent_name": {
+      "type": "string",
+      "description": "Human-readable agent name.",
+      "default": ""
+    },
+    "org_id": {
+      "type": "string",
+      "description": "Organization the agent belongs to. Should follow AGRN format: org.<kebab-name>.",
+      "default": "",
+      "examples": ["org.finco", "org.acme-corp"]
+    },
+    "org_name": {
+      "type": "string",
+      "description": "Human-readable organization name.",
+      "default": ""
+    },
+
+    "policy_id": {
+      "type": "string",
+      "description": "ID of the policy that was accessed or injected.",
+      "default": ""
+    },
+    "policy_name": {
+      "type": "string",
+      "description": "Human-readable policy name. Should follow AGRN format: policy.<kebab-name>.",
+      "default": "",
+      "examples": ["policy.trading-limits", "policy.eu-refund-policy"]
+    },
+    "policy_version": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Version of the policy at the time of this governance action. Point-in-time snapshot for audit.",
+      "default": 0
+    },
+    "prompt_id": {
+      "type": "string",
+      "description": "ID of the prompt that was used.",
+      "default": ""
+    },
+    "prompt_name": {
+      "type": "string",
+      "description": "Human-readable prompt name. Should follow AGRN format: prompt.<kebab-name>.",
+      "default": "",
+      "examples": ["prompt.customer-support-v3"]
+    },
+    "prompt_version": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Version of the prompt at the time of this governance action. Point-in-time snapshot for audit.",
+      "default": 0
+    },
+
+    "governance_hash": {
+      "type": "string",
+      "description": "SHA-256 hash of the governed content at the time of the action. This is the cryptographic proof. For single-resource events, this is a flat SHA-256 hash. For multi-resource events with Merkle tree (hash_type='merkle-sha256'), this is the Merkle root. Must be lowercase hexadecimal (64 characters) when present, or empty string for events without governed content.",
+      "pattern": "^([a-f0-9]{64})?$"
+    },
+    "hash_type": {
+      "type": "string",
+      "description": "Hash algorithm used. 'sha256' for flat hash over single content, 'merkle-sha256' for Merkle tree root over multiple governed resources.",
+      "default": "sha256",
+      "examples": ["sha256", "sha384", "sha512", "merkle-sha256"]
+    },
+    "trace_id": {
+      "type": "string",
+      "description": "Distributed trace ID for end-to-end correlation. When integrating with OpenTelemetry, this SHOULD be the W3C Trace Context trace-id (32-character lowercase hexadecimal). Also accepts UUID v4 or prefixed format.",
+      "examples": [
+        "4bf92f3577b34da6a3ce929d0e0e4736",
+        "550e8400-e29b-41d4-a716-446655440000",
+        "trace-550e8400-e29b-41d4-a716-446655440000"
+      ]
+    },
+    "span_id": {
+      "type": "string",
+      "pattern": "^([a-f0-9]{16})?$",
+      "description": "OpenTelemetry span ID identifying the specific operation that produced this governance event. 16-character lowercase hexadecimal conforming to W3C Trace Context parent-id. OPTIONAL. When present, enables correlation between an AIGP event and a specific span within an OTel trace.",
+      "default": "",
+      "examples": ["00f067aa0ba902b7", "a1b2c3d4e5f6a7b8"]
+    },
+    "parent_span_id": {
+      "type": "string",
+      "pattern": "^([a-f0-9]{16})?$",
+      "description": "OpenTelemetry parent span ID. 16-character lowercase hexadecimal. Enables AIGP events to participate in OTel span trees, connecting governance actions to the calling operation.",
+      "default": "",
+      "examples": ["00f067aa0ba902b7"]
+    },
+    "trace_flags": {
+      "type": "string",
+      "pattern": "^([a-f0-9]{2})?$",
+      "description": "W3C Trace Context trace-flags. 2-character lowercase hexadecimal. '01' indicates the trace is sampled. Preserves OTel sampling decisions in governance records.",
+      "default": "",
+      "examples": ["01", "00"]
+    },
+    "data_classification": {
+      "type": "string",
+      "enum": ["public", "internal", "confidential", "restricted", ""],
+      "description": "Classification of the data involved. Four-tier model: public, internal, confidential, restricted.",
+      "default": ""
+    },
+
+    "template_rendered": {
+      "type": "boolean",
+      "description": "Whether the policy was rendered with variables before delivery.",
+      "default": false
+    },
+
+    "denial_reason": {
+      "type": "string",
+      "description": "Why access was denied (human-readable). Present for DENIED events.",
+      "default": ""
+    },
+    "violation_type": {
+      "type": "string",
+      "description": "Category of policy violation.",
+      "default": ""
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["critical", "high", "medium", "low", ""],
+      "description": "Impact level for denial and violation events.",
+      "default": ""
+    },
+
+    "source_ip": {
+      "type": "string",
+      "description": "IP address of the requesting agent or service. May be omitted or anonymized for privacy.",
+      "default": ""
+    },
+    "request_method": {
+      "type": "string",
+      "description": "HTTP method or protocol action that triggered the event.",
+      "default": "",
+      "examples": ["GET", "POST", "A2A", "MCP"]
+    },
+    "request_path": {
+      "type": "string",
+      "description": "API path or skill name.",
+      "default": ""
+    },
+
+    "ingested_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the event was received by the analytics store. Allows freshness measurement."
+    },
+
+    "annotations": {
+      "type": "object",
+      "description": "Informational context for the governance event. Annotations are NOT included in governance hashes and are NOT governed resources. Use for regulatory hooks, domain-specific tags, or supplementary context that does not require cryptographic proof. Consumers MUST ignore annotation keys they do not recognize.",
+      "default": {},
+      "additionalProperties": true
+    },
+
+    "query_hash": {
+      "type": "string",
+      "pattern": "^([a-f0-9]{64})?$",
+      "description": "SHA-256 hash of a retrieval query. Used in MEMORY_READ events to prove what the agent asked for. Complements governance_hash (which proves what was returned).",
+      "default": ""
+    },
+    "previous_hash": {
+      "type": "string",
+      "pattern": "^([a-f0-9]{64})?$",
+      "description": "SHA-256 hash of the resource state before a write operation. Used in MEMORY_WRITTEN events to enable diff tracking of memory mutations, and in MODEL_SWITCHED events to record the prior model's identity.",
+      "default": ""
+    },
+
+    "event_signature": {
+      "type": "string",
+      "description": "JWS Compact Serialization (RFC 7515) over the canonical event JSON (excluding signature fields). ES256 (ECDSA P-256) is mandatory-to-implement. Provides non-repudiation: proves WHO produced the governance proof. OPTIONAL — required for regulated environments (finserv, healthcare), not needed for internal governance.",
+      "default": "",
+      "examples": ["eyJhbGciOiJFUzI1NiJ9.eyJldmVudF9pZCI6Ii4uLiJ9.MEUCIQDx..."]
+    },
+    "signature_key_id": {
+      "type": "string",
+      "description": "AGRN-style identifier for the signing key. Enables key rotation and multi-agent key management. MUST be present when event_signature is non-empty.",
+      "default": "",
+      "examples": ["aigp:org.finco:agent.trading-bot-v2:2026-02"]
+    },
+
+    "sequence_number": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Monotonically increasing counter scoped per (agent_id, trace_id). Provides causal ordering within a single agent's trace — event N happened after event N-1 regardless of clock skew. MUST start at 1 and MUST NOT reset within a trace.",
+      "default": 1
+    },
+    "causality_ref": {
+      "type": "string",
+      "description": "Points to the event_id that causally precedes this event. Creates a DAG of causal dependencies across agents. Used for cross-agent ordering: Agent B's inference started because Agent A's A2A call completed.",
+      "default": "",
+      "examples": ["a1b2c3d4-e5f6-7890-abcd-ef1234567890"]
+    },
+
+    "spec_version": {
+      "type": "string",
+      "description": "The AIGP specification version the producer implemented. Consumers use this to determine which features and resource types to expect.",
+      "default": "",
+      "examples": ["0.12"]
+    },
+
+    "governance_merkle_tree": {
+      "type": "object",
+      "description": "Optional Merkle tree structure for multi-resource governance hash verification. Present when hash_type is 'merkle-sha256'. Each leaf represents one governed resource, enabling per-resource verification without possessing all resources. See Spec Section 8.8.",
+      "properties": {
+        "algorithm": {
+          "type": "string",
+          "description": "Hash algorithm used for leaf and internal node computation.",
+          "default": "sha256",
+          "examples": ["sha256"]
+        },
+        "resource_count": {
+          "type": "integer",
+          "minimum": 2,
+          "description": "Number of governed resources in the Merkle tree. Must equal the length of the resources array. Minimum 2 (single-resource events do not use Merkle trees)."
+        },
+        "resources": {
+          "type": "array",
+          "description": "Canonical Merkle resource array. Items are sorted by hash value (lexicographic ascending). Each item represents one governed resource.",
+          "minItems": 2,
+          "items": {
+            "type": "object",
+            "required": ["resource_type", "resource_name", "hash"],
+            "properties": {
+              "resource_type": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]*(-[a-z0-9_]+)*$",
+                "description": "Type of governed resource. Standard types: policy, prompt, dynamic_prompt, tool, lineage, context, memory, model. Implementations MAY define custom types matching this pattern. Consumers MUST ignore resource types they do not recognize."
+              },
+              "resource_name": {
+                "type": "string",
+                "description": "AGRN-format name of the governed resource.",
+                "examples": ["policy.trading-limits", "prompt.customer-support-v3", "tool.order-lookup", "context.upstream-lineage", "lineage.upstream-orders", "memory.conversation-history", "model.gpt4-trading-v2"]
+              },
+              "hash": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$",
+                "description": "SHA-256 leaf hash. Default derivation is SHA-256(resource_type + ':' + resource_name + ':' + content). Pointer and salted extensions are defined by hash_mode/is_salted metadata."
+              },
+              "template_hash": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$",
+                "description": "SHA-256 hash of the approved template/config baseline for this resource. REQUIRED when resource_type is policy, prompt, dynamic_prompt, or tool. MAY be provided for other resource types."
+              },
+              "hash_mode": {
+                "type": "string",
+                "enum": ["content", "pointer"],
+                "description": "How the leaf hash was computed. 'content' (default): hash of raw content. 'pointer': hash of a content-addressable URI. When 'pointer', content_ref MUST be present.",
+                "default": "content"
+              },
+              "content_ref": {
+                "type": "string",
+                "description": "When hash_mode is 'pointer', the URI of the immutable content blob (e.g., 's3://aigp-governance/sha256:abc123...'). The blob's object key is the SHA-256 of the content (self-verifying). MUST be present when hash_mode is 'pointer'.",
+                "default": ""
+              },
+              "is_salted": {
+                "type": "boolean",
+                "description": "Whether the leaf hash was computed using producer-side salt/nonce material in addition to content or pointer input. Raw salt material MUST NOT be embedded in the AIGP event.",
+                "default": false
+              },
+              "salt_ref": {
+                "type": "string",
+                "description": "Opaque reference to external salt/nonce material (for example, KMS/HSM/vault locator) used when is_salted is true. The value MUST be stable for verifier retrieval but MUST NOT include raw salt bytes.",
+                "default": ""
+              },
+              "is_partial": {
+                "type": "boolean",
+                "description": "Whether this leaf hash represents partial stream content captured before an interruption or block.",
+                "default": false
+              },
+              "offset_unit": {
+                "type": "string",
+                "enum": ["token", "byte", "char", ""],
+                "description": "Unit used for stream interruption offsets. Required when is_partial is true.",
+                "default": ""
+              },
+              "offset": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Zero-based offset in offset_unit indicating where stream interruption occurred. Required when is_partial is true."
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "required": ["resource_type"],
+                  "properties": {
+                    "resource_type": {
+                      "enum": ["policy", "prompt", "dynamic_prompt", "tool"]
+                    }
+                  }
+                },
+                "then": {
+                  "required": ["template_hash"],
+                  "properties": {
+                    "template_hash": { "minLength": 1 }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "required": ["hash_mode"],
+                  "properties": {
+                    "hash_mode": { "const": "pointer" }
+                  }
+                },
+                "then": {
+                  "required": ["content_ref"],
+                  "properties": {
+                    "content_ref": { "minLength": 1 }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "required": ["is_salted"],
+                  "properties": {
+                    "is_salted": { "const": true }
+                  }
+                },
+                "then": {
+                  "required": ["salt_ref"],
+                  "properties": {
+                    "salt_ref": { "minLength": 1 }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "required": ["is_partial"],
+                  "properties": {
+                    "is_partial": { "const": true }
+                  }
+                },
+                "then": {
+                  "required": ["offset_unit", "offset"],
+                  "properties": {
+                    "offset_unit": { "enum": ["token", "byte", "char"] }
+                  }
+                }
+              }
+            ],
+            "additionalProperties": false
+          }
+        },
+        "inclusion_proofs": {
+          "type": "array",
+          "description": "Optional Merkle inclusion proofs for selective leaf verification without rebuilding the full tree.",
+          "default": [],
+          "items": {
+            "type": "object",
+            "required": ["leaf_hash", "proof_path"],
+            "properties": {
+              "leaf_hash": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$",
+                "description": "Leaf hash being proven."
+              },
+              "proof_path": {
+                "type": "array",
+                "minItems": 1,
+                "description": "Ordered sibling path from leaf level to root.",
+                "items": {
+                  "type": "object",
+                  "required": ["sibling_hash", "sibling_position"],
+                  "properties": {
+                    "sibling_hash": {
+                      "type": "string",
+                      "pattern": "^[a-f0-9]{64}$",
+                      "description": "Sibling node hash at this Merkle level."
+                    },
+                    "sibling_position": {
+                      "type": "string",
+                      "enum": ["left", "right"],
+                      "description": "Position of sibling_hash relative to the current node during parent computation."
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["algorithm", "resource_count", "resources"],
+      "additionalProperties": false
+    }
+  },
   "additionalProperties": false
 }

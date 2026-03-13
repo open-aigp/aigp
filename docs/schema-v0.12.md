@@ -3,9 +3,9 @@ title: AIGP Schema v0.12 (Preview)
 layout: default
 ---
 
-# AIGP Event Schema v0.12 (Preview)
+# AIGP Event Schema v0.12
 
-This page publishes a formatted, documented JSON Schema artifact for the v0.12 event model.
+This page publishes the versioned v0.12 JSON Schema artifact.
 
 ## Artifacts
 
@@ -14,25 +14,24 @@ This page publishes a formatted, documented JSON Schema artifact for the v0.12 e
 
 ## What is documented in the JSON
 
-The schema itself contains field-level descriptions for:
+The schema contains field-level constraints for:
 
-- CloudEvents alignment (`source`, `event_id`, `event_type`, `event_time`)
-- OTel correlation (`trace_id`, `span_id`, `parent_span_id`, `trace_flags`)
-- Governance integrity (`governance_hash`, `aigp_hash`, `parent_hash`, `event_signature`)
-- Merkle resource proof envelope (`governance_merkle_tree`)
-- Signed vs unsigned extension model (`annotations`)
+- Core event identity and timing (`event_id`, `event_type`, `event_category`, `event_time`)
+- Agent and trace correlation (`agent_id`, `trace_id`, `sequence_number`, `causality_ref`)
+- Governance integrity (`governance_hash`, `hash_type`, `event_signature`, `signature_key_id`)
+- Merkle governance proof envelope (`governance_merkle_tree.algorithm`, `resource_count`, `resources`, `inclusion_proofs`)
+- Privacy and streaming extensions (`is_salted`, `salt_ref`, `is_partial`, `offset_unit`, `offset`)
 
-## Required fields (v0.12 preview)
+## Required fields (v0.12)
 
-- `spec_version`
-- `source`
 - `event_id`
 - `event_type`
 - `event_category`
 - `event_time`
 - `agent_id`
-- `trace_id`
 - `governance_hash`
+- `trace_id`
+- `sequence_number`
 
 ## Validation
 
@@ -44,5 +43,5 @@ curl -sS https://open-aigp.org/schema/aigp-event.v0.12.schema.json | jq '.title,
 
 ## Notes
 
-- This page is a publication surface for the preview schema artifact.
-- Normative spec text and version ratification remain governed by `spec/aigp-spec.md`.
+- This page is a publication surface for the versioned schema artifact.
+- Normative behavior remains governed by `spec/aigp-spec.md`.

@@ -564,7 +564,7 @@ The AIGP specification defines 31 standard event types across 15 categories. Imp
 - **Emitted when:** An inference step is stopped by safety or governance controls before completion. Implementations MUST emit this event when an inference operation is blocked.
 - **Required fields:** All fields from Section 5.1.
 - **SHOULD be present:** `denial_reason`, `violation_type`, `severity`.
-- **Notes:** Implementations SHOULD set `severity` to reflect the reason for blocking (e.g., `"critical"` for safety filter triggers, `"high"` for policy violations). When the block occurred mid-stream, implementations SHOULD include a governed leaf representing the generated partial content with `is_partial=true`, `offset_unit`, and `offset` in `governance_merkle_tree.leaves`. This enables exact replay and verification of what content existed at interruption time.
+- **Notes:** Implementations SHOULD set `severity` to reflect the reason for blocking (e.g., `"critical"` for safety filter triggers, `"high"` for policy violations). When the block occurred mid-stream, implementations SHOULD include a governed resource entry representing the generated partial content with `is_partial=true`, `offset_unit`, and `offset` in `governance_merkle_tree.resources`. This enables exact replay and verification of what content existed at interruption time.
 
 ### 6.14 Human-in-the-Loop Events
 
@@ -755,7 +755,7 @@ Where:
 - `content` is the governed content string for that resource.
 - The `":"` separator is the literal colon character (U+003A).
 
-The prefix `resource_type:resource_name:` serves as a domain separator preventing cross-resource collision. Two different resource types with identical content MUST produce different leaf hashes.
+The prefix `resource_type:resource_name:` serves as a domain separator preventing cross-resource collision. Two different resource types with identical content MUST produce different resource hashes.
 
 ##### Pointer Pattern (Large/External Content)
 
@@ -767,7 +767,7 @@ leaf_hash = SHA-256(UTF-8(resource_type + ":" + resource_name + ":" + content_re
 
 Where `content_ref` is a stable, immutable URI pointing to the governed content (e.g., `s3://aigp-governance/sha256:abc123...`). The Pointer Pattern creates a content-addressable chain: event → pointer hash → URI → immutable blob.
 
-Each leaf in the `governance_merkle_tree.leaves` array MAY include:
+Each resource entry in the `governance_merkle_tree.resources` array MAY include:
 - `hash_mode` — `"content"` (default, hash raw content) or `"pointer"` (hash the URI).
 - `content_ref` — The URI of the immutable content blob. MUST be present when `hash_mode` is `"pointer"`.
 
@@ -775,8 +775,8 @@ When `hash_mode` is omitted, `"content"` is assumed. Existing single-resource ev
 
 #### 8.8.3 Tree Construction Algorithm
 
-1. Compute leaf hashes for all governed resources per Section 8.8.2.
-2. Sort leaf hashes lexicographically (ascending, lowercase hexadecimal). Sorting ensures deterministic tree construction regardless of input order.
+1. Compute resource hashes for all governed resources per Section 8.8.2.
+2. Sort resource hashes lexicographically (ascending, lowercase hexadecimal). Sorting ensures deterministic tree construction regardless of input order.
 3. If only one leaf exists, the leaf hash IS the root. The `hash_type` MUST be `"sha256"` (not `"merkle-sha256"`). This ensures backward compatibility with single-resource events.
 4. If multiple leaves exist, pair them left-to-right: `parent = SHA-256(UTF-8(left_hash + right_hash))` where `+` is string concatenation of the two 64-character hexadecimal strings.
 5. If the number of nodes at any level is odd, the last node MUST be promoted to the next level unchanged. Implementations MUST NOT duplicate the last node. This avoids the second-preimage vulnerability present in Bitcoin-style Merkle trees where a tree with N leaves could produce the same root as a tree with N+1 leaves.
@@ -806,8 +806,8 @@ When `hash_type` is `"merkle-sha256"`, the event SHOULD include a top-level `gov
 {
   "governance_merkle_tree": {
     "algorithm": "sha256",
-    "leaf_count": 7,
-    "leaves": [
+    "resource_count": 7,
+    "resources": [
       {
         "resource_type": "policy",
         "resource_name": "policy.refund-limits",
@@ -863,8 +863,8 @@ When `hash_type` is `"merkle-sha256"`, the event SHOULD include a top-level `gov
 ```
 
 - `algorithm` — The hash algorithm used for leaf and internal node computation. MUST be `"sha256"`.
-- `leaf_count` — The number of leaves. MUST equal the length of the `leaves` array. MUST be ≥ 2.
-- `leaves` — An array of leaf objects sorted by `hash` value (lexicographic ascending). This is the same sort order used during tree construction (Section 8.8.3 step 2).
+- `resource_count` — The number of governed resources. MUST equal the length of the `resources` array. MUST be ≥ 2.
+- `resources` — An array of governed resource objects sorted by `hash` value (lexicographic ascending). This is the same sort order used during tree construction (Section 8.8.3 step 2).
 - `inclusion_proofs` — OPTIONAL array of Merkle inclusion proofs for selective verification.
 
 Each leaf object MUST contain:
@@ -920,12 +920,13 @@ A verifier who possesses only a subset of resources can verify leaf membership u
    - If `sibling_position` is `"right"`, compute `current = SHA-256(UTF-8(current + sibling_hash))`.
 3. After processing all steps, `current` MUST equal `governance_hash`.
 
-If `inclusion_proofs` is absent, verifiers MAY still perform partial verification by matching leaf hashes from `governance_merkle_tree.leaves`, but this does not provide a cryptographic inclusion path to the root.
+If `inclusion_proofs` is absent, verifiers MAY still perform partial verification by matching resource hashes from `governance_merkle_tree.resources`, but this does not provide a cryptographic inclusion path to the root.
 
 #### 8.8.8 Backward Compatibility
 
 - Single-resource events MUST NOT use Merkle tree construction. They produce the same flat SHA-256 hash as in previous AIGP versions.
 - The `governance_merkle_tree` field is OPTIONAL. Events without this field are valid under both old and new schema versions.
+- `governance_merkle_tree.resources` is the canonical resource array key. Producers and consumers MUST use `resources`.
 - The `inclusion_proofs` field is OPTIONAL. Events without proof paths remain valid and interoperable.
 - Consumers that do not understand Merkle trees can treat `governance_hash` as an opaque integrity token — the field format (64-character lowercase hex) is identical for both flat and Merkle hashes.
 
@@ -1161,8 +1162,8 @@ The content of all four resource types SHOULD be JSON-serialized. Implementation
 
 AIGP defines two OpenLineage custom facets for attaching AI governance metadata to OpenLineage RunEvents:
 
-- **AIGPGovernanceRunFacet** (run facet): Captures the aggregate governance proof (hash, hash type, leaf count, agent ID, trace ID, enforcement result, data classification). Attached to `run.facets.aigp_governance`.
-- **AIGPResourceInputFacet** (input dataset facet): Captures per-resource governance metadata (resource type, name, version, leaf hash). Attached to `inputs[].inputFacets.aigp_resource`.
+- **AIGPGovernanceRunFacet** (run facet): Captures the aggregate governance proof (hash, hash type, resource count, agent ID, trace ID, enforcement result, data classification). Attached to `run.facets.aigp_governance`.
+- **AIGPResourceInputFacet** (input dataset facet): Captures per-resource governance metadata (resource type, name, version, resource hash). Attached to `inputs[].inputFacets.aigp_resource`.
 
 The facet schemas are maintained at `integrations/openlineage/facets/`.
 
@@ -1314,7 +1315,7 @@ Every AIGP event transmitted via CloudEvents MUST include the following context 
 | `source` | REQUIRED | `"aigp://"` + `org_id` + `"/"` + `agent_id` | URI identifying the governance event producer. Example: `"aigp://org.finco/agent.trading-bot-v2"`. When `org_id` is empty, use `"aigp://default/"` + `agent_id`. |
 | `time` | OPTIONAL | `event_time` | RFC 3339 timestamp. SHOULD be included. |
 | `datacontenttype` | OPTIONAL | `"application/json"` | SHOULD be included for structured mode. |
-| `dataschema` | OPTIONAL | `"https://open-aigp.org/schema/aigp-event.schema.json"` | URI of the AIGP JSON Schema. |
+| `dataschema` | OPTIONAL | `"https://open-aigp.org/schema/aigp-event.v0.12.schema.json"` | URI of the AIGP JSON Schema for the emitted event version. |
 | `subject` | OPTIONAL | `policy_name` or `prompt_name` | The primary governed resource, when applicable. |
 
 #### 13.1.1 Type Attribute Convention
@@ -1367,7 +1368,7 @@ The entire CloudEvents envelope (context attributes + AIGP event as `data`) is s
   "source": "aigp://org.finco/agent.trading-bot-v2",
   "time": "2026-02-15T14:30:00.123Z",
   "datacontenttype": "application/json",
-  "dataschema": "https://open-aigp.org/schema/aigp-event.schema.json",
+  "dataschema": "https://open-aigp.org/schema/aigp-event.v0.12.schema.json",
   "aigpagentid": "agent.trading-bot-v2",
   "aigporgid": "org.finco",
   "aigpcategory": "inject",
@@ -1655,11 +1656,11 @@ The following is a fully annotated AIGP event representing a successful policy i
 | 0.11 | 2026-02-20 | Privacy + streaming + auditor readiness. Adds optional salted leaf metadata (`is_salted`, `salt_ref`) to support privacy-preserving verification patterns where raw salt material is managed out-of-band. Adds optional stream interruption metadata (`is_partial`, `offset_unit`, `offset`) for partial-output proof in blocked/violating inference flows. Extends verifier guidance with stable integrity finding identifiers (`SIGNATURE_VERIFICATION_FAILED`, `MERKLE_ROOT_MISMATCH`, `INCLUSION_PROOF_INVALID`) and introduces a recommended verifier report schema (`schema/aigp-verifier-report.schema.json`). |
 | 0.10.0 | 2026-02-19 | Merkle inclusion proofs for selective verification. Adds optional `governance_merkle_tree.inclusion_proofs` with ordered proof paths (`sibling_hash`, `sibling_position`) for root-verifiable subset auditing. Introduces conformance profiles (Section 12.4) and reference HIPAA/FINRA sector profiles (Section 12.5), including profile-level requirement to sign `high`/`critical` severity events. Adds boundary claim guidance for `UNVERIFIED_BOUNDARY` events and a reference audit viewer requirements appendix for non-technical auditors. Tightens ordering baseline: `sequence_number` is now a required field and MUST be >= 1. |
 | 0.9.0 | 2026-02-15 | Normative Protobuf schema and CloudEvents transport. Adds `schema/aigp-event.proto` (Proto3) as the single source of truth for AIGP event types. Proto3 messages: `AIGPEvent`, `GovernanceMerkleTree`, `MerkleLeaf`, `AIGPEventBatch`. Proto3 enums: `DataClassification`, `Severity`, `HashType`, `HashMode`. Canonical JSON mapping preserves existing wire format. Buf configuration for linting, breaking change detection, and multi-language code generation (TypeScript, Go, Python). Language-specific package options for Java, Go, C#. Section 13 rewritten to adopt CloudEvents (CNCF Graduated, v1.0) as the normative transport layer. Defines 6 AIGP extension attributes (`aigpagentid`, `aigporgid`, `aigpcategory`, `aigpclassification`, `aigpseverity`, `aigphashtype`) for envelope-level routing. Type convention: `org.aigp.v1.<lowercase_event_type>`. Source convention: `aigp://<org_id>/<agent_id>`. Supports structured and binary content modes across HTTP, Kafka, AMQP, NATS, gRPC, and WebSockets. Python SDK: `cloudevents` module. No wire format changes — existing JSON events are valid v0.9.0 events. |
-| 0.8.0 | 2026-02-15 | Proof integrity. Adds event signing (JWS Compact Serialization, ES256 via `event_signature` and `signature_key_id` fields), causal ordering (`sequence_number` monotonic per agent_id+trace_id, `causality_ref` for cross-agent DAG), `UNVERIFIED_BOUNDARY` event type (boundary category for Dark Node visibility), and Pointer Pattern (`hash_mode` and `content_ref` on Merkle leaves for large/external content). New Section 5.8: Proof Integrity Fields. Updated Section 14.2: Event Signing with JWS specification. 31 standard event types across 15 categories. Backward compatible: all new fields have defaults. |
+| 0.8.0 | 2026-02-15 | Proof integrity. Adds event signing (JWS Compact Serialization, ES256 via `event_signature` and `signature_key_id` fields), causal ordering (`sequence_number` monotonic per agent_id+trace_id, `causality_ref` for cross-agent DAG), `UNVERIFIED_BOUNDARY` event type (boundary category for Dark Node visibility), and Pointer Pattern (`hash_mode` and `content_ref` on Merkle resources for large/external content). New Section 5.8: Proof Integrity Fields. Updated Section 14.2: Event Signing with JWS specification. 31 standard event types across 15 categories. Backward compatible: all new fields have defaults. |
 | 0.7.0 | 2026-02-15 | Memory + Model resource types. Adds `"memory"` (agent-defined dynamic state, RAG retrieval) and `"model"` (inference engine identity) as standard governed resource types. 14 new event types (total: 30 across 14 categories): MEMORY_READ, MEMORY_WRITTEN, TOOL_INVOKED, TOOL_DENIED, CONTEXT_CAPTURED, LINEAGE_SNAPSHOT, INFERENCE_STARTED, INFERENCE_COMPLETED, INFERENCE_BLOCKED, HUMAN_OVERRIDE, HUMAN_APPROVAL, CLASSIFICATION_CHANGED, MODEL_LOADED, MODEL_SWITCHED. New fields: `query_hash` (MEMORY_READ), `previous_hash` (MEMORY_WRITTEN, MODEL_SWITCHED). AGRN `memory.` and `model.` prefixes. OTel attributes `aigp.memories.names`, `aigp.models.names`. Backward compatible: existing events unchanged. |
 | 0.6.0 | 2026-02-15 | Resources + Annotations extensibility model. Renames `metadata` field to `annotations` (informational, unhashed context). Removes `ext_` extension field prefix mechanism. Opens `resource_type` from closed enum to open pattern — implementations may define custom resource types. Adds `spec_version` optional field. Adds must-ignore rule for unknown resource types and annotation keys. Adds additive-only minor version guarantee. Rewrites Principle 5 as "Forward-Compatible Extensibility." |
 | 0.5.0 | 2026-02-15 | OpenLineage integration. Adds `"context"` (general pre-execution state) and `"lineage"` (data lineage snapshots) resource types for Merkle tree leaves. New Section 11.8: OpenLineage Data Lineage Integration (context/lineage resources, custom facets, emission granularity, active vs. passive lineage, triple-emit architecture). Custom facet schemas: AIGPGovernanceRunFacet, AIGPResourceInputFacet. Python SDK: `openlineage` module with `build_governance_run_facet()`, `build_resource_input_facets()`, `build_openlineage_run_event()`. Optional `openlineage_callback` on AIGPInstrumentor. AGRN `context.` and `lineage.` prefixes. OTel attributes `aigp.contexts.names`, `aigp.lineages.names`. Backward compatible: existing events unchanged. |
-| 0.4.0 | 2026-02-15 | Merkle tree governance hash. Adds `governance_merkle_tree` optional field. New `hash_type` value `"merkle-sha256"`. Section 8.8 defines leaf construction, tree algorithm, and verification. OTel attribute `aigp.governance.merkle.leaf_count`. Backward compatible: single-resource events unchanged. |
+| 0.4.0 | 2026-02-15 | Merkle tree governance hash. Adds `governance_merkle_tree` optional field. New `hash_type` value `"merkle-sha256"`. Section 8.8 defines leaf construction, tree algorithm, and verification. OTel attribute `aigp.governance.merkle.resource_count`. Backward compatible: single-resource events unchanged. |
 | 0.3.0 | 2026-02-15 | OpenTelemetry integration. Adds `span_id`, `parent_span_id`, `trace_flags` fields. Adds spec sections 11.4 (OTel Span Correlation), 11.5 (AIGP Semantic Attributes), 11.6 (Baggage Propagation), 11.7 (W3C tracestate Vendor Key). Companion semantic conventions document and reference OTel Collector configuration. |
 | 0.2.1 | 2026-02-09 | Adds `policy_version` and `prompt_version` fields. Removes `version_id` and `version_number`. |
 | 0.2.0 | 2026-02-08 | Formal specification with RFC 2119 language. Security and privacy sections. Conformance levels. Transport bindings. AGRN naming. |

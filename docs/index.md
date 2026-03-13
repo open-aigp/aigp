@@ -7,7 +7,7 @@ layout: default
 
 Open standard for cryptographic AI governance proof events.
 
-## v0.12 Schema Preview
+## v0.12 Schema
 
 - Formatted JSON Schema: [`/schema/aigp-event.v0.12.schema.json`](https://open-aigp.org/schema/aigp-event.v0.12.schema.json)
 - Documentation page: [`/schema-v0.12`](https://open-aigp.org/schema-v0.12)
@@ -25,8 +25,8 @@ Open standard for cryptographic AI governance proof events.
 
 | Area | Implemented | Status |
 |---|---|---|
-| Privacy-preserving proof metadata | Optional `is_salted` + `salt_ref` on Merkle leaves | Done |
-| Streaming interruption evidence | Optional `is_partial` + `offset_unit` + `offset` on Merkle leaves | Done |
+| Privacy-preserving proof metadata | Optional `is_salted` + `salt_ref` on Merkle resources | Done |
+| Streaming interruption evidence | Optional `is_partial` + `offset_unit` + `offset` on Merkle resources | Done |
 | Auditor finding taxonomy | Stable IDs for ordering, signature, and Merkle findings | Done |
 | Verifier report contract | JSON Schema for machine-readable verifier output | Done |
 | Wire schemas | Protobuf + JSON Schema updated for v0.12 fields | Done |
@@ -265,8 +265,8 @@ For governance proof, AIGP plays a role similar to what OpenTelemetry plays for 
   "spec_version": "0.12",
   "governance_merkle_tree": {
     "algorithm": "sha256",
-    "leaf_count": 2,
-    "leaves": [
+    "resource_count": 2,
+    "resources": [
       {
         "resource_type": "policy",
         "resource_name": "policy.trading-limits",
@@ -298,7 +298,7 @@ For governance proof, AIGP plays a role similar to what OpenTelemetry plays for 
 ## Where To Go Next
 
 - Spec: [spec/aigp-spec.md](https://github.com/open-aigp/aigp/blob/main/spec/aigp-spec.md)
-- JSON Schema: [schema/aigp-event.schema.json](https://open-aigp.org/schema/aigp-event.schema.json)
+- JSON Schema: [schema/aigp-event.v0.12.schema.json](https://open-aigp.org/schema/aigp-event.v0.12.schema.json)
 - Verifier Report Schema: [schema/aigp-verifier-report.schema.json](https://open-aigp.org/schema/aigp-verifier-report.schema.json)
 - Repository layout: [docs/repository-layout.md](https://github.com/open-aigp/aigp/blob/main/docs/repository-layout.md)
 - Audit viewer guide: [docs/audit-viewer.md](https://github.com/open-aigp/aigp/blob/main/docs/audit-viewer.md)

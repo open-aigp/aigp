@@ -31,28 +31,6 @@ namespace AIGP.Sdk
         private static readonly object SequenceLock = new object();
         private static readonly Dictionary<string, long> SequenceCounters = new Dictionary<string, long>();
 
-        private static readonly Dictionary<string, string> EventTypeAliases = new Dictionary<string, string>
-        {
-            ["governance.policy.delivered"] = "INJECT_SUCCESS",
-            ["governance.policy.denied"] = "INJECT_DENIED",
-            ["governance.prompt.delivered"] = "PROMPT_USED",
-            ["governance.prompt.denied"] = "PROMPT_DENIED",
-            ["governance.policy.violation"] = "POLICY_VIOLATION",
-            ["governance.a2a.call"] = "A2A_CALL",
-            ["governance.tool.invoked"] = "TOOL_INVOKED",
-            ["governance.tool.denied"] = "TOOL_DENIED",
-            ["governance.boundary.unverified"] = "UNVERIFIED_BOUNDARY",
-            ["governance.inference.started"] = "INFERENCE_STARTED",
-            ["governance.inference.completed"] = "INFERENCE_COMPLETED",
-            ["governance.inference.blocked"] = "INFERENCE_BLOCKED",
-            ["governance.model.loaded"] = "MODEL_LOADED",
-            ["governance.model.switched"] = "MODEL_SWITCHED",
-            ["governance.memory.read"] = "MEMORY_READ",
-            ["governance.memory.written"] = "MEMORY_WRITTEN",
-            ["governance.proof"] = "GOVERNANCE_PROOF",
-            ["governance.proof.delivered"] = "GOVERNANCE_PROOF",
-        };
-
         public interface IEventSigner
         {
             string Algorithm { get; }
@@ -204,13 +182,12 @@ namespace AIGP.Sdk
                 throw new ArgumentException("event_type must be a non-empty string", nameof(eventType));
             }
 
-            var mapped = EventTypeAliases.TryGetValue(raw, out var alias) ? alias : raw;
-            if (EventTypePattern.IsMatch(mapped))
+            if (EventTypePattern.IsMatch(raw))
             {
-                return mapped;
+                return raw;
             }
 
-            var normalized = Regex.Replace(mapped, "[^A-Za-z0-9]+", "_").Trim('_').ToUpperInvariant();
+            var normalized = Regex.Replace(raw, "[^A-Za-z0-9]+", "_").Trim('_').ToUpperInvariant();
             if (normalized.Length == 0 || !EventTypePattern.IsMatch(normalized))
             {
                 throw new ArgumentException($"event_type {eventType} cannot be normalized to valid UPPER_SNAKE_CASE", nameof(eventType));
@@ -351,8 +328,8 @@ namespace AIGP.Sdk
             return (root, new GovernanceMerkleTree
             {
                 Algorithm = "sha256",
-                LeafCount = sortedLeaves.Count,
-                Leaves = sortedLeaves,
+                ResourceCount = sortedLeaves.Count,
+                Resources = sortedLeaves,
                 InclusionProofs = inclusionProofs,
             });
         }
@@ -933,8 +910,8 @@ namespace AIGP.Sdk
                 var map = new SortedDictionary<string, object>(StringComparer.Ordinal)
                 {
                     ["algorithm"] = tree.Algorithm ?? string.Empty,
-                    ["leaf_count"] = tree.LeafCount,
-                    ["leaves"] = tree.Leaves ?? new List<MerkleLeaf>(),
+                    ["resource_count"] = tree.ResourceCount,
+                    ["resources"] = tree.Resources ?? new List<MerkleLeaf>(),
                 };
                 if (tree.InclusionProofs != null && tree.InclusionProofs.Count > 0)
                 {
@@ -1122,9 +1099,9 @@ namespace AIGP.Sdk
     {
         public string Algorithm { get; set; } = "sha256";
 
-        public int LeafCount { get; set; }
+        public int ResourceCount { get; set; }
 
-        public List<MerkleLeaf> Leaves { get; set; } = new List<MerkleLeaf>();
+        public List<MerkleLeaf> Resources { get; set; } = new List<MerkleLeaf>();
 
         public List<MerkleInclusionProof> InclusionProofs { get; set; } = new List<MerkleInclusionProof>();
     }

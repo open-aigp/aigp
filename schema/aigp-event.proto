@@ -163,11 +163,12 @@ message GovernanceMerkleTree {
   // Default: "sha256".
   string algorithm = 1;
 
-  // Number of leaves. Must equal len(leaves). Minimum 2.
-  int32 leaf_count = 2;
+  // Number of governed resources. Must equal len(resources). Minimum 2.
+  int32 resource_count = 2;
 
-  // Leaf nodes sorted by hash value (lexicographic ascending).
-  repeated MerkleLeaf leaves = 3;
+  // Canonical Merkle resource array, sorted by hash value
+  // (lexicographic ascending).
+  repeated MerkleLeaf resources = 3;
 
   // Optional inclusion proofs for selective verification.
   repeated MerkleInclusionProof inclusion_proofs = 4;

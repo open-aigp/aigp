@@ -38,7 +38,7 @@ The run facet provides the summary (hash, enforcement result, classification). T
 | `hashType` | String | Yes | `"sha256"` or `"merkle-sha256"` | `"merkle-sha256"` |
 | `agentId` | String | Yes | AGRN agent identifier | `"agent.credit-scorer-v2"` |
 | `traceId` | String | Yes | Correlation key across AIGP, OTel, OpenLineage | `"4bf92f35..."` |
-| `leafCount` | Int | No | Number of governed resources | `3` |
+| `resourceCount` | Int | No | Number of governed resources | `3` |
 | `enforcementResult` | String | No | `"allowed"` or `"denied"` | `"allowed"` |
 | `dataClassification` | String | No | Highest classification level | `"confidential"` |
 | `specVersion` | String | No | AIGP specification version | `"0.12"` |
@@ -96,10 +96,10 @@ root, tree = compute_merkle_governance_hash(resources)
 AI Agent Invocation
     |
     +--> AIGP Event (JSON) --> AI Governance Store
-    |    Full Merkle tree, all leaf hashes, complete proof
+    |    Full Merkle tree, all resource hashes, complete proof
     |
     +--> OTel Span Event --> Observability Backend
-    |    governance_hash, leaf_count, trace context
+    |    governance_hash, resource_count, trace context
     |
     +--> OpenLineage RunEvent with AIGP Facets --> Lineage Backend
          Governance summary + resources as InputDatasets

@@ -13,7 +13,7 @@ This document defines a practical baseline for building an AIGP audit viewer tha
 1. DAG reconstruction from `sequence_number` + `causality_ref`.
 2. Event signature verification (`event_signature`, `signature_key_id`).
 3. Merkle verification:
-   - Full-tree verification with `governance_merkle_tree.leaves`.
+   - Full-tree verification with `governance_merkle_tree.resources`.
    - Selective verification with `governance_merkle_tree.inclusion_proofs`.
 4. Boundary risk visualization for `UNVERIFIED_BOUNDARY`.
 5. Profile compliance checks (for example, signed `high`/`critical` events in regulated profiles).

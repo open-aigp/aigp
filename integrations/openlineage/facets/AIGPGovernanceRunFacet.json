@@ -20,7 +20,7 @@
               "enum": ["sha256", "merkle-sha256"],
               "description": "Hash algorithm used. 'sha256' for single-resource flat hash, 'merkle-sha256' for Merkle tree root."
             },
-            "leafCount": {
+            "resourceCount": {
               "type": "integer",
               "minimum": 1,
               "description": "Number of governed resources. 1 for flat hash, 2+ for Merkle tree."

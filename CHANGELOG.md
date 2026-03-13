@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Specification line advanced to `0.12`; spec, schema docs, examples, SDK defaults, and integration companion docs aligned.
+- Canonical Merkle resource array key is now `governance_merkle_tree.resources` across spec/schema/examples/SDK emitters; legacy `leaves` alias support removed from schema and SDK helpers.
 - Repository topology split into dedicated repos:
   - `open-aigp/aigp` (spec, schema, conformance)
   - `open-aigp/aigp-sdks` (all language SDKs)
@@ -206,7 +207,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Python SDK: `compute_leaf_hash()` — domain-separated SHA-256 for individual governed resources
 - Python SDK: `compute_merkle_governance_hash()` — computes Merkle root + tree structure from resource list
 - Python SDK: `multi_resource_governance_proof()` instrumentor method with OTel dual-emit
-- OTel semantic attribute: `aigp.governance.merkle.leaf_count` — span attribute for Merkle tree observability
+- OTel semantic attribute: `aigp.governance.merkle.resource_count` — span attribute for Merkle tree observability
 - OTel semantic conventions Section 3.6: Merkle Tree Governance Attributes
 - OTel Collector OTTL rule to tag Merkle-tree governance spans
 - Example event: `merkle-governance-proof.json` (5-leaf tree with real computed hashes)

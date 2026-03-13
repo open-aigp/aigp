@@ -45,8 +45,8 @@ pub struct MerkleInclusionProof {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GovernanceMerkleTree {
     pub algorithm: String,
-    pub leaf_count: usize,
-    pub leaves: Vec<MerkleLeaf>,
+    pub resource_count: usize,
+    pub resources: Vec<MerkleLeaf>,
     pub inclusion_proofs: Option<Vec<MerkleInclusionProof>>,
 }
 
@@ -314,14 +314,13 @@ pub fn normalize_event_type(event_type: &str) -> Result<String, String> {
         return Err("event_type must be a non-empty string".to_string());
     }
 
-    let mapped = event_type_alias(raw).unwrap_or(raw);
-    if is_valid_event_type(mapped) {
-        return Ok(mapped.to_string());
+    if is_valid_event_type(raw) {
+        return Ok(raw.to_string());
     }
 
     let mut normalized = String::new();
     let mut prev_us = false;
-    for ch in mapped.chars() {
+    for ch in raw.chars() {
         if ch.is_ascii_alphanumeric() {
             normalized.push(ch.to_ascii_uppercase());
             prev_us = false;
@@ -496,8 +495,8 @@ pub fn compute_merkle_governance_hash_with_proofs(
         root_hash: root,
         merkle_tree: Some(GovernanceMerkleTree {
             algorithm: "sha256".to_string(),
-            leaf_count: leaves.len(),
-            leaves,
+            resource_count: leaves.len(),
+            resources: leaves,
             inclusion_proofs,
         }),
     })
@@ -729,13 +728,13 @@ fn governance_merkle_tree_to_json(tree: &GovernanceMerkleTree) -> JsonValue {
     let mut obj = BTreeMap::<String, JsonValue>::new();
     obj.insert("algorithm".to_string(), JsonValue::String(tree.algorithm.clone()));
     obj.insert(
-        "leaf_count".to_string(),
-        JsonValue::Number(tree.leaf_count.to_string()),
+        "resource_count".to_string(),
+        JsonValue::Number(tree.resource_count.to_string()),
     );
     obj.insert(
-        "leaves".to_string(),
+        "resources".to_string(),
         JsonValue::Array(
-            tree.leaves
+            tree.resources
                 .iter()
                 .map(|leaf| {
                     let mut leaf_obj = BTreeMap::<String, JsonValue>::new();
@@ -1147,30 +1146,6 @@ pub fn build_ce_headers(
     }
 
     Ok(headers)
-}
-
-fn event_type_alias(value: &str) -> Option<&'static str> {
-    match value {
-        "governance.policy.delivered" => Some("INJECT_SUCCESS"),
-        "governance.policy.denied" => Some("INJECT_DENIED"),
-        "governance.prompt.delivered" => Some("PROMPT_USED"),
-        "governance.prompt.denied" => Some("PROMPT_DENIED"),
-        "governance.policy.violation" => Some("POLICY_VIOLATION"),
-        "governance.a2a.call" => Some("A2A_CALL"),
-        "governance.tool.invoked" => Some("TOOL_INVOKED"),
-        "governance.tool.denied" => Some("TOOL_DENIED"),
-        "governance.boundary.unverified" => Some("UNVERIFIED_BOUNDARY"),
-        "governance.inference.started" => Some("INFERENCE_STARTED"),
-        "governance.inference.completed" => Some("INFERENCE_COMPLETED"),
-        "governance.inference.blocked" => Some("INFERENCE_BLOCKED"),
-        "governance.model.loaded" => Some("MODEL_LOADED"),
-        "governance.model.switched" => Some("MODEL_SWITCHED"),
-        "governance.memory.read" => Some("MEMORY_READ"),
-        "governance.memory.written" => Some("MEMORY_WRITTEN"),
-        "governance.proof" => Some("GOVERNANCE_PROOF"),
-        "governance.proof.delivered" => Some("GOVERNANCE_PROOF"),
-        _ => None,
-    }
 }
 
 fn is_valid_event_type(value: &str) -> bool {
@@ -1679,14 +1654,14 @@ mod tests {
     use std::rc::Rc;
 
     #[test]
-    fn normalize_event_type_maps_aliases() {
+    fn normalize_event_type_normalizes_dotted_names() {
         assert_eq!(
             normalize_event_type("governance.policy.delivered").unwrap(),
-            "INJECT_SUCCESS"
+            "GOVERNANCE_POLICY_DELIVERED"
         );
         assert_eq!(
             normalize_event_type("governance.prompt.denied").unwrap(),
-            "PROMPT_DENIED"
+            "GOVERNANCE_PROMPT_DENIED"
         );
     }
 
@@ -1701,7 +1676,7 @@ mod tests {
     #[test]
     fn create_and_validate_event() {
         let event = create_aigp_event(CreateEventOptions {
-            event_type: "governance.policy.delivered".to_string(),
+            event_type: "INJECT_SUCCESS".to_string(),
             event_category: Some("Inject".to_string()),
             agent_id: "agent.test".to_string(),
             trace_id: None,
@@ -1763,7 +1738,7 @@ mod tests {
         ])
         .unwrap();
         assert!(multi.merkle_tree.is_some());
-        assert_eq!(multi.merkle_tree.unwrap().leaf_count, 2);
+        assert_eq!(multi.merkle_tree.unwrap().resource_count, 2);
     }
 
     #[test]
@@ -1781,7 +1756,7 @@ mod tests {
         let tree = result.merkle_tree.unwrap();
         assert!(tree.inclusion_proofs.is_some());
         let proofs = tree.inclusion_proofs.unwrap();
-        assert_eq!(proofs.len(), tree.leaf_count);
+        assert_eq!(proofs.len(), tree.resource_count);
         for proof in &proofs {
             assert!(verify_inclusion_proof(&result.root_hash, &proof.leaf_hash, &proof.proof_path).unwrap());
         }

@@ -300,14 +300,14 @@
           "default": "sha256",
           "examples": ["sha256"]
         },
-        "leaf_count": {
+        "resource_count": {
           "type": "integer",
           "minimum": 2,
-          "description": "Number of leaves in the Merkle tree. Must equal the length of the leaves array. Minimum 2 (single-resource events do not use Merkle trees)."
+          "description": "Number of governed resources in the Merkle tree. Must equal the length of the resources array. Minimum 2 (single-resource events do not use Merkle trees)."
         },
-        "leaves": {
+        "resources": {
           "type": "array",
-          "description": "Leaf nodes sorted by hash value (lexicographic ascending). Each leaf represents one governed resource.",
+          "description": "Canonical Merkle resource array. Items are sorted by hash value (lexicographic ascending). Each item represents one governed resource.",
           "minItems": 2,
           "items": {
             "type": "object",
@@ -474,7 +474,7 @@
           }
         }
       },
-      "required": ["algorithm", "leaf_count", "leaves"],
+      "required": ["algorithm", "resource_count", "resources"],
       "additionalProperties": false
     }
   },

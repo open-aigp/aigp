@@ -12,7 +12,7 @@ internal static class Program
     {
         try
         {
-            NormalizeEventTypeMapsAliases();
+            NormalizeEventTypeNormalizesDottedNames();
             CreateAndValidateEvent();
             EmitComputesGovernanceHash();
             EmitRequiresContentWhenHashMissing();
@@ -35,10 +35,10 @@ internal static class Program
         }
     }
 
-    private static void NormalizeEventTypeMapsAliases()
+    private static void NormalizeEventTypeNormalizesDottedNames()
     {
         var mapped = AIGP.NormalizeEventType("governance.policy.delivered");
-        Expect(mapped == "INJECT_SUCCESS", $"expected INJECT_SUCCESS, got {mapped}");
+        Expect(mapped == "GOVERNANCE_POLICY_DELIVERED", $"expected GOVERNANCE_POLICY_DELIVERED, got {mapped}");
 
         var custom = AIGP.NormalizeEventType("myplatform.audit.login");
         Expect(custom == "MYPLATFORM_AUDIT_LOGIN", $"expected MYPLATFORM_AUDIT_LOGIN, got {custom}");
@@ -49,7 +49,7 @@ internal static class Program
         var governanceHash = AIGP.ComputeGovernanceHash("policy", "sha256");
         var evt = AIGP.CreateAIGPEvent(new CreateEventOptions
         {
-            EventType = "governance.policy.delivered",
+            EventType = "INJECT_SUCCESS",
             EventCategory = "Inject",
             AgentID = "agent.test",
             GovernanceHash = governanceHash,
@@ -115,7 +115,7 @@ internal static class Program
         });
 
         Expect(!string.IsNullOrWhiteSpace(multiRoot), "expected non-empty merkle root");
-        Expect(multiTree != null && multiTree.LeafCount == 2, "expected tree with 2 leaves");
+        Expect(multiTree != null && multiTree.ResourceCount == 2, "expected tree with 2 leaves");
     }
 
     private static void HashModeValidation()

@@ -28,27 +28,6 @@ private fun allowsEmptyGovernanceHash(eventType: String): Boolean {
     return emptyGovernanceHashEventTypes.contains(eventType.trim())
 }
 
-private val eventTypeAliases = mapOf(
-    "governance.policy.delivered" to "INJECT_SUCCESS",
-    "governance.policy.denied" to "INJECT_DENIED",
-    "governance.prompt.delivered" to "PROMPT_USED",
-    "governance.prompt.denied" to "PROMPT_DENIED",
-    "governance.policy.violation" to "POLICY_VIOLATION",
-    "governance.a2a.call" to "A2A_CALL",
-    "governance.tool.invoked" to "TOOL_INVOKED",
-    "governance.tool.denied" to "TOOL_DENIED",
-    "governance.boundary.unverified" to "UNVERIFIED_BOUNDARY",
-    "governance.inference.started" to "INFERENCE_STARTED",
-    "governance.inference.completed" to "INFERENCE_COMPLETED",
-    "governance.inference.blocked" to "INFERENCE_BLOCKED",
-    "governance.model.loaded" to "MODEL_LOADED",
-    "governance.model.switched" to "MODEL_SWITCHED",
-    "governance.memory.read" to "MEMORY_READ",
-    "governance.memory.written" to "MEMORY_WRITTEN",
-    "governance.proof" to "GOVERNANCE_PROOF",
-    "governance.proof.delivered" to "GOVERNANCE_PROOF",
-)
-
 private val random = SecureRandom()
 
 interface EventSigner {
@@ -166,8 +145,8 @@ data class MerkleInclusionProof(
 
 data class GovernanceMerkleTree(
     val algorithm: String,
-    val leafCount: Int,
-    val leaves: List<MerkleLeaf>,
+    val resourceCount: Int,
+    val resources: List<MerkleLeaf>,
     val inclusionProofs: List<MerkleInclusionProof>? = null,
 )
 
@@ -284,12 +263,11 @@ fun normalizeEventType(eventType: String): String {
     val raw = eventType.trim()
     require(raw.isNotEmpty()) { "event_type must be a non-empty string" }
 
-    val mapped = eventTypeAliases[raw] ?: raw
-    if (eventTypePattern.matches(mapped)) {
-        return mapped
+    if (eventTypePattern.matches(raw)) {
+        return raw
     }
 
-    val normalized = mapped
+    val normalized = raw
         .replace(Regex("[^A-Za-z0-9]+"), "_")
         .trim('_')
         .uppercase()
@@ -403,8 +381,8 @@ fun computeMerkleGovernanceHash(
         rootHash = root,
         merkleTree = GovernanceMerkleTree(
             algorithm = "sha256",
-            leafCount = leaves.size,
-            leaves = leaves,
+            resourceCount = leaves.size,
+            resources = leaves,
             inclusionProofs = inclusionProofs,
         ),
     )
@@ -713,8 +691,8 @@ private fun AIGPEvent.toSignableMap(): Map<String, Any> {
     governanceMerkleTree?.let { tree ->
         out["governance_merkle_tree"] = linkedMapOf(
             "algorithm" to tree.algorithm,
-            "leaf_count" to tree.leafCount,
-            "leaves" to tree.leaves.map { leaf ->
+            "resource_count" to tree.resourceCount,
+            "resources" to tree.resources.map { leaf ->
                 linkedMapOf<String, Any?>(
                     "resource_type" to leaf.resourceType,
                     "resource_name" to leaf.resourceName,

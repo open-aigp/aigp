@@ -64,7 +64,7 @@ Span attributes capture per-operation governance metadata. They are set on the s
 | `aigp.event.category` | String | Yes | AIGP event category | `inject` |
 | `aigp.governance.hash` | String | Conditional | SHA-256 hash of governed content (flat or Merkle root) | `a3f2b8c1d4e5...` |
 | `aigp.governance.hash_type` | String | No | Hash algorithm (`sha256` or `merkle-sha256`) | `sha256` |
-| `aigp.governance.merkle.leaf_count` | Int | Conditional | Number of leaves in Merkle tree (when `hash_type` is `merkle-sha256`) | `5` |
+| `aigp.governance.merkle.resource_count` | Int | Conditional | Number of governed resources in Merkle tree (when `hash_type` is `merkle-sha256`) | `5` |
 | `aigp.data.classification` | String | Recommended | Data sensitivity level | `confidential` |
 | `aigp.enforcement.result` | String | Recommended | Governance decision | `allowed` or `denied` |
 | `aigp.event.signature` | String | No | JWS Compact Serialization (ES256) for event non-repudiation | `eyJhbGciOi...` |
@@ -116,13 +116,13 @@ When only a single policy or prompt is involved, implementations MAY use the sin
 
 ### 3.6 Merkle Tree Governance Attributes
 
-When `hash_type` is `"merkle-sha256"`, the governance hash is a Merkle root computed over individual resource leaf hashes. The following attribute provides observability into the Merkle structure:
+When `hash_type` is `"merkle-sha256"`, the governance hash is a Merkle root computed over individual resource hashes. The following attribute provides observability into the Merkle structure:
 
 | Attribute | Type | Required | Description | Example |
 |---|---|---|---|---|
-| `aigp.governance.merkle.leaf_count` | Int | Conditional | Number of governed resources in the Merkle tree. Present when `aigp.governance.hash_type` is `"merkle-sha256"`. | `5` |
+| `aigp.governance.merkle.resource_count` | Int | Conditional | Number of governed resources in the Merkle tree. Present when `aigp.governance.hash_type` is `"merkle-sha256"`. | `5` |
 
-The full Merkle tree structure (leaf hashes, resource names, resource types) is carried in the AIGP event's `governance_merkle_tree` field rather than as OTel span attributes, to avoid excessive attribute cardinality in observability backends. The `leaf_count` attribute provides sufficient signal for dashboards and alerts (e.g., "alert when leaf_count > 10" or "histogram of resources per governance action").
+The full Merkle tree structure (resource hashes, resource names, resource types) is carried in the AIGP event's `governance_merkle_tree` field rather than as OTel span attributes, to avoid excessive attribute cardinality in observability backends. The `resource_count` attribute provides sufficient signal for dashboards and alerts (e.g., "alert when resource_count > 10" or "histogram of resources per governance action").
 
 ### 3.7 Context, Lineage, Memory, and Model Resource Attributes
 
@@ -135,7 +135,7 @@ When governance operations include context, lineage, memory, or model resources,
 | `aigp.memories.names` | String[] | Conditional | Governed memory resource names. Present when memory resources participate in the governance action. | `["memory.conversation-history", "memory.rag-context"]` |
 | `aigp.models.names` | String[] | Conditional | Governed model resource names. Present when model resources participate in the governance action. | `["model.gpt4-trading-v2", "model.llama3-fine-tuned"]` |
 
-Context resources capture general pre-execution state (env config, runtime params). Lineage resources capture data lineage snapshots (upstream dataset provenance, DAG state). Memory resources capture agent memory state (conversation history, RAG context, session state). Model resources capture inference engine identity (model card, weights hash, config). All participate in the Merkle tree alongside policies, prompts, and tools. The `aigp.governance.merkle.leaf_count` attribute reflects the total count including all resource type leaves.
+Context resources capture general pre-execution state (env config, runtime params). Lineage resources capture data lineage snapshots (upstream dataset provenance, DAG state). Memory resources capture agent memory state (conversation history, RAG context, session state). Model resources capture inference engine identity (model card, weights hash, config). All participate in the Merkle tree alongside policies, prompts, and tools. The `aigp.governance.merkle.resource_count` attribute reflects the total count including all governed resources.
 
 ---
 

@@ -5,7 +5,7 @@
   "source": "aigp://org.finco/agent.trading-bot-v2",
   "time": "2026-02-15T14:30:00.123Z",
   "datacontenttype": "application/json",
-  "dataschema": "https://open-aigp.org/schema/aigp-event.schema.json",
+  "dataschema": "https://open-aigp.org/schema/aigp-event.v0.12.schema.json",
   "subject": "policy.trading-limits",
   "aigpagentid": "agent.trading-bot-v2",
   "aigporgid": "org.finco",

@@ -17,27 +17,6 @@ const TRACE_ID_PREFIXED_UUID_V4_PATTERN = /^(trace|req)-[0-9a-f]{8}-[0-9a-f]{4}-
 const EMPTY_GOVERNANCE_HASH_EVENT_TYPES = new Set(["AGENT_REGISTERED", "AGENT_APPROVED", "AGENT_DEACTIVATED"]);
 const sequenceCounters = new Map();
 
-const EVENT_TYPE_ALIASES = {
-  "governance.policy.delivered": "INJECT_SUCCESS",
-  "governance.policy.denied": "INJECT_DENIED",
-  "governance.prompt.delivered": "PROMPT_USED",
-  "governance.prompt.denied": "PROMPT_DENIED",
-  "governance.policy.violation": "POLICY_VIOLATION",
-  "governance.a2a.call": "A2A_CALL",
-  "governance.tool.invoked": "TOOL_INVOKED",
-  "governance.tool.denied": "TOOL_DENIED",
-  "governance.boundary.unverified": "UNVERIFIED_BOUNDARY",
-  "governance.inference.started": "INFERENCE_STARTED",
-  "governance.inference.completed": "INFERENCE_COMPLETED",
-  "governance.inference.blocked": "INFERENCE_BLOCKED",
-  "governance.model.loaded": "MODEL_LOADED",
-  "governance.model.switched": "MODEL_SWITCHED",
-  "governance.memory.read": "MEMORY_READ",
-  "governance.memory.written": "MEMORY_WRITTEN",
-  "governance.proof": "GOVERNANCE_PROOF",
-  "governance.proof.delivered": "GOVERNANCE_PROOF",
-};
-
 function randomHex(bytes) {
   return crypto.randomBytes(bytes).toString("hex");
 }
@@ -59,12 +38,11 @@ function normalizeEventType(eventType) {
     throw new Error("event_type must be a non-empty string");
   }
 
-  const mapped = EVENT_TYPE_ALIASES[raw] || raw;
-  if (EVENT_TYPE_PATTERN.test(mapped)) {
-    return mapped;
+  if (EVENT_TYPE_PATTERN.test(raw)) {
+    return raw;
   }
 
-  const normalized = mapped.replace(/[^A-Za-z0-9]+/g, "_").replace(/^_+|_+$/g, "").toUpperCase();
+  const normalized = raw.replace(/[^A-Za-z0-9]+/g, "_").replace(/^_+|_+$/g, "").toUpperCase();
   if (!normalized || !EVENT_TYPE_PATTERN.test(normalized)) {
     throw new Error(`event_type ${JSON.stringify(eventType)} cannot be normalized to a valid UPPER_SNAKE_CASE value`);
   }
@@ -147,13 +125,13 @@ function computeMerkleRoot(sortedHashes) {
 }
 
 function buildInclusionProofs(merkleTree) {
-  const leaves = (merkleTree && merkleTree.leaves) || [];
-  if (!Array.isArray(leaves) || leaves.length === 0) {
+  const resources = (merkleTree && merkleTree.resources) || [];
+  if (!Array.isArray(resources) || resources.length === 0) {
     return [];
   }
 
-  const proofs = leaves.map(() => []);
-  let nodes = leaves.map((leaf, index) => ({
+  const proofs = resources.map(() => []);
+  let nodes = resources.map((leaf, index) => ({
     hash: leaf.hash,
     leafIndexes: [index],
   }));
@@ -189,7 +167,7 @@ function buildInclusionProofs(merkleTree) {
     nodes = next;
   }
 
-  return leaves.map((leaf, index) => ({
+  return resources.map((leaf, index) => ({
     leaf_hash: leaf.hash,
     proof_path: proofs[index],
   }));
@@ -287,8 +265,8 @@ function computeMerkleGovernanceHash(resources, options = {}) {
 
   const tree = {
     algorithm: "sha256",
-    leaf_count: leaves.length,
-    leaves,
+    resource_count: leaves.length,
+    resources: leaves,
   };
   if (options.include_inclusion_proofs || options.includeInclusionProofs) {
     tree.inclusion_proofs = buildInclusionProofs(tree);
