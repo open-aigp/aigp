@@ -35,8 +35,35 @@ class AIGPTest {
         assertEquals("INJECT_SUCCESS", event.eventType)
         assertEquals("inject", event.eventCategory)
         assertTrue(event.traceId.matches(Regex("^[a-f0-9]{32}$")))
-        assertEquals("0.12", event.specVersion)
+        assertEquals("0.13", event.specVersion)
+        assertEquals("aigp://default/agent.test", event.source)
         assertEquals(0, validateAIGPEvent(event).size)
+    }
+
+    @Test
+    fun toAgentGPIngestEventStringifiesStructuredFields() {
+        val event = createAIGPEvent(
+            CreateEventOptions(
+                eventType = "INJECT_SUCCESS",
+                eventCategory = "inject",
+                agentId = "agent.test",
+                orgId = "org.acme",
+                governanceHash = computeGovernanceHash("policy", "sha256"),
+                annotations = mapOf("signed" to mapOf("scope" to "prod")),
+                governanceMerkleTree = GovernanceMerkleTree(
+                    algorithm = "sha256",
+                    resourceCount = 1,
+                    resources = listOf(
+                        MerkleLeaf("policy", "policy.limits", "a".repeat(64))
+                    ),
+                ),
+            )
+        )
+
+        val wire = toAgentGPIngestEvent(event)
+        assertEquals("aigp://org.acme/agent.test", wire["source"])
+        assertTrue(wire["annotations"] is String)
+        assertTrue(wire["governance_merkle_tree"] is String)
     }
 
     @Test
@@ -134,7 +161,7 @@ class AIGPTest {
                 eventCategory = "inject",
                 agentId = "agent.test",
                 orgId = "org.acme",
-                policyName = "policy.limits",
+                policyNames = listOf("policy.limits"),
                 governanceHash = computeGovernanceHash("policy", "sha256"),
             )
         )

@@ -54,6 +54,7 @@ let event = create_aigp_event(CreateEventOptions {
     sequence_number: None,
     causality_ref: None,
     spec_version: None,
+    source: None,
     governance_merkle_tree: None,
 })?;
 
@@ -69,3 +70,11 @@ assert_eq!(ce.r#type, "org.aigp.v1.inject_success");
 - Signer boundary (`EventSigner`, `sign_event_with_signer`)
 - Delivery reliability helpers (`RetryPolicy`, `ReliableEmitter`)
 - CloudEvents helpers
+
+## AgentGP Ingest Compatibility
+
+For AgentGP `POST /api/aigp/events`, convert canonical SDK events to the current ingest wire profile:
+
+```rust
+let wire_event = aigp::to_agentgp_ingest_event(&event)?;
+```

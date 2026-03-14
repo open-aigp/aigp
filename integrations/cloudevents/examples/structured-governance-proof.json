@@ -5,7 +5,7 @@
   "source": "aigp://org.finco/agent.trading-bot-v2",
   "time": "2026-02-15T14:30:01.456Z",
   "datacontenttype": "application/json",
-  "dataschema": "https://open-aigp.org/schema/aigp-event.v0.12.schema.json",
+  "dataschema": "https://open-aigp.org/schema/aigp-event.v0.13.schema.json",
   "aigpagentid": "agent.trading-bot-v2",
   "aigporgid": "org.finco",
   "aigpcategory": "governance-proof",
@@ -67,6 +67,6 @@
       "risk_tier": "high",
       "review_required": true
     },
-    "spec_version": "0.12"
+    "spec_version": "0.13"
   }
 }

@@ -64,13 +64,53 @@ func TestCreateAndValidateAIGPEvent(t *testing.T) {
 	if event.SequenceNumber < 1 {
 		t.Fatalf("expected auto sequence_number >= 1, got %d", event.SequenceNumber)
 	}
-	if event.SpecVersion != "0.12" {
-		t.Fatalf("expected default spec_version 0.12, got %q", event.SpecVersion)
+	if event.SpecVersion != "0.13" {
+		t.Fatalf("expected default spec_version 0.13, got %q", event.SpecVersion)
+	}
+	if event.Source != "aigp://default/agent.test" {
+		t.Fatalf("expected default source aigp://default/agent.test, got %q", event.Source)
 	}
 
 	errs := ValidateAIGPEvent(event)
 	if len(errs) != 0 {
 		t.Fatalf("expected no validation errors, got %v", errs)
+	}
+}
+
+func TestToAgentGPIngestEventStringifiesStructuredFields(t *testing.T) {
+	event, err := CreateAIGPEvent(CreateEventOptions{
+		EventType:      "INJECT_SUCCESS",
+		EventCategory:  "inject",
+		AgentID:        "agent.test",
+		OrgID:          "org.acme",
+		GovernanceHash: ComputeHashMust("policy"),
+		Annotations: map[string]any{
+			"signed": map[string]any{"scope": "prod"},
+		},
+		GovernanceMerkleTree: &GovernanceMerkleTree{
+			Algorithm:     "sha256",
+			ResourceCount: 1,
+			Resources: []MerkleLeaf{
+				{ResourceType: "policy", ResourceName: "policy.limits", Hash: strings.Repeat("a", 64)},
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("create event: %v", err)
+	}
+
+	wire, err := ToAgentGPIngestEvent(event)
+	if err != nil {
+		t.Fatalf("to ingest event: %v", err)
+	}
+	if wire["source"] != "aigp://org.acme/agent.test" {
+		t.Fatalf("expected source to be set, got %v", wire["source"])
+	}
+	if _, ok := wire["annotations"].(string); !ok {
+		t.Fatalf("expected annotations string, got %T", wire["annotations"])
+	}
+	if _, ok := wire["governance_merkle_tree"].(string); !ok {
+		t.Fatalf("expected governance_merkle_tree string, got %T", wire["governance_merkle_tree"])
 	}
 }
 
@@ -338,7 +378,7 @@ func TestCloudEventHelpers(t *testing.T) {
 		EventCategory:  "inject",
 		AgentID:        "agent.test",
 		OrgID:          "org.acme",
-		PolicyName:     "policy.limits",
+		PolicyNames:    []string{"policy.limits"},
 		GovernanceHash: governanceHash,
 	})
 	if err != nil {

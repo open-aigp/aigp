@@ -73,6 +73,12 @@ function hasOwn(obj, key) {
   return Object.prototype.hasOwnProperty.call(obj, key);
 }
 
+function defaultSource(agentId, orgId) {
+  const org = String(orgId || "").trim() || "default";
+  const agent = String(agentId || "").trim() || "unknown-agent";
+  return `${AIGP_SOURCE_SCHEME}${org}/${agent}`;
+}
+
 function computeGovernanceHash(content, algorithm = "sha256") {
   const supported = new Set(["sha256", "sha384", "sha512"]);
   if (!supported.has(algorithm)) {
@@ -472,29 +478,72 @@ function createAIGPEvent(options) {
     agent_name: String(options.agent_name || options.agentName || ""),
     org_id: String(options.org_id || options.orgId || ""),
     org_name: String(options.org_name || options.orgName || ""),
-    policy_id: String(options.policy_id || options.policyId || ""),
-    policy_name: String(options.policy_name || options.policyName || ""),
-    policy_version: Number(options.policy_version || options.policyVersion || 0),
-    prompt_id: String(options.prompt_id || options.promptId || ""),
-    prompt_name: String(options.prompt_name || options.promptName || ""),
-    prompt_version: Number(options.prompt_version || options.promptVersion || 0),
     hash_type: String(options.hash_type || options.hashType || "sha256"),
+    aigp_hash: String(options.aigp_hash || options.aigpHash || ""),
+    parent_hash: String(options.parent_hash || options.parentHash || ""),
     data_classification: String(options.data_classification || options.dataClassification || ""),
-    template_rendered: Boolean(options.template_rendered || options.templateRendered || false),
     denial_reason: String(options.denial_reason || options.denialReason || ""),
     violation_type: String(options.violation_type || options.violationType || ""),
     severity: String(options.severity || ""),
-    source_ip: String(options.source_ip || options.sourceIp || ""),
     request_method: String(options.request_method || options.requestMethod || ""),
     request_path: String(options.request_path || options.requestPath || ""),
-    query_hash: String(options.query_hash || options.queryHash || ""),
-    previous_hash: String(options.previous_hash || options.previousHash || ""),
     annotations: options.annotations || {},
     event_signature: String(options.event_signature || options.eventSignature || ""),
     signature_key_id: String(options.signature_key_id || options.signatureKeyId || ""),
     sequence_number: sequenceNumber,
     causality_ref: String(options.causality_ref || options.causalityRef || ""),
-    spec_version: String(options.spec_version || options.specVersion || "0.12"),
+    spec_version: String(options.spec_version || options.specVersion || "0.13"),
+    source: String(options.source || "").trim() || defaultSource(agentId, options.org_id || options.orgId),
+    policy_ids: Array.isArray(options.policy_ids)
+      ? options.policy_ids.slice()
+      : Array.isArray(options.policyIds)
+      ? options.policyIds.slice()
+      : [],
+    policy_names: Array.isArray(options.policy_names)
+      ? options.policy_names.slice()
+      : Array.isArray(options.policyNames)
+      ? options.policyNames.slice()
+      : [],
+    prompt_ids: Array.isArray(options.prompt_ids)
+      ? options.prompt_ids.slice()
+      : Array.isArray(options.promptIds)
+      ? options.promptIds.slice()
+      : [],
+    prompt_names: Array.isArray(options.prompt_names)
+      ? options.prompt_names.slice()
+      : Array.isArray(options.promptNames)
+      ? options.promptNames.slice()
+      : [],
+    tool_ids: Array.isArray(options.tool_ids)
+      ? options.tool_ids.slice()
+      : Array.isArray(options.toolIds)
+      ? options.toolIds.slice()
+      : [],
+    tool_names: Array.isArray(options.tool_names)
+      ? options.tool_names.slice()
+      : Array.isArray(options.toolNames)
+      ? options.toolNames.slice()
+      : [],
+    context_ids: Array.isArray(options.context_ids)
+      ? options.context_ids.slice()
+      : Array.isArray(options.contextIds)
+      ? options.contextIds.slice()
+      : [],
+    context_names: Array.isArray(options.context_names)
+      ? options.context_names.slice()
+      : Array.isArray(options.contextNames)
+      ? options.contextNames.slice()
+      : [],
+    guardrail_ids: Array.isArray(options.guardrail_ids)
+      ? options.guardrail_ids.slice()
+      : Array.isArray(options.guardrailIds)
+      ? options.guardrailIds.slice()
+      : [],
+    guardrail_names: Array.isArray(options.guardrail_names)
+      ? options.guardrail_names.slice()
+      : Array.isArray(options.guardrailNames)
+      ? options.guardrailNames.slice()
+      : [],
   };
 
   const merkleTree = options.governance_merkle_tree || options.governanceMerkleTree;
@@ -523,6 +572,41 @@ function emitAIGPEvent(options) {
     };
   }
   return createAIGPEvent(options);
+}
+
+function toAgentGPIngestEvent(aigpEvent) {
+  if (!aigpEvent || typeof aigpEvent !== "object" || Array.isArray(aigpEvent)) {
+    throw new Error("aigpEvent must be an object");
+  }
+
+  const out = { ...aigpEvent };
+  if (!String(out.spec_version || "").trim()) {
+    out.spec_version = "0.13";
+  }
+  if (!String(out.source || "").trim()) {
+    out.source = defaultSource(out.agent_id || out.agentId || "", out.org_id || out.orgId || "");
+  }
+
+  if (hasOwn(out, "annotations") && out.annotations != null && typeof out.annotations !== "string") {
+    out.annotations = JSON.stringify(out.annotations);
+  }
+
+  if (
+    hasOwn(out, "governance_merkle_tree") &&
+    out.governance_merkle_tree != null &&
+    typeof out.governance_merkle_tree !== "string"
+  ) {
+    out.governance_merkle_tree = JSON.stringify(out.governance_merkle_tree);
+  } else if (
+    !hasOwn(out, "governance_merkle_tree") &&
+    hasOwn(out, "governanceMerkleTree") &&
+    out.governanceMerkleTree != null &&
+    typeof out.governanceMerkleTree !== "string"
+  ) {
+    out.governance_merkle_tree = JSON.stringify(out.governanceMerkleTree);
+  }
+
+  return out;
 }
 
 function validateAIGPEvent(event) {
@@ -615,7 +699,10 @@ function wrapAsCloudEvent(aigpEvent, options = {}) {
     ce.dataschema = AIGP_DATA_SCHEMA;
   }
 
-  const subject = aigpEvent.policy_name || aigpEvent.prompt_name || "";
+  const subject =
+    (Array.isArray(aigpEvent.policy_names) && aigpEvent.policy_names[0]) ||
+    (Array.isArray(aigpEvent.prompt_names) && aigpEvent.prompt_names[0]) ||
+    "";
   if (subject) {
     ce.subject = subject;
   }
@@ -707,6 +794,7 @@ module.exports = {
   verifyInclusionProof,
   createAIGPEvent,
   emitAIGPEvent,
+  toAgentGPIngestEvent,
   validateAIGPEvent,
   ES256PrivateKeySigner,
   signEventWithSigner,

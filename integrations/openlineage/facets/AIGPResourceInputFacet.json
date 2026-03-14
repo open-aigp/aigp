@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/open-aigp/aigp/blob/v0.12/integrations/openlineage/facets/AIGPResourceInputFacet.json",
+  "$id": "https://github.com/open-aigp/aigp/blob/v0.13/integrations/openlineage/facets/AIGPResourceInputFacet.json",
   "$defs": {
     "AIGPResourceInputFacet": {
       "allOf": [

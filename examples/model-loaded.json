@@ -7,12 +7,6 @@
   "agent_name": "Trading Bot",
   "org_id": "org.finco",
   "org_name": "FinCo",
-  "policy_id": "",
-  "policy_name": "",
-  "policy_version": 0,
-  "prompt_id": "",
-  "prompt_name": "",
-  "prompt_version": 0,
   "governance_hash": "ba25f42d5a3077006b95ebdfebc3248662eac2e24ba113ed3832d6e316add718",
   "hash_type": "sha256",
   "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
@@ -20,15 +14,11 @@
   "parent_span_id": "",
   "trace_flags": "01",
   "data_classification": "internal",
-  "template_rendered": false,
   "denial_reason": "",
   "violation_type": "",
   "severity": "",
-  "source_ip": "",
   "request_method": "",
   "request_path": "",
-  "query_hash": "",
-  "previous_hash": "",
   "annotations": {
     "provider": "openai",
     "model_name": "gpt-4",
@@ -36,6 +26,6 @@
     "purpose": "trading-analysis",
     "quantization": "none"
   },
-  "spec_version": "0.12",
+  "spec_version": "0.13",
   "sequence_number": 1
 }

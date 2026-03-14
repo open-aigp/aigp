@@ -101,17 +101,17 @@ class TestWrapAsCloudevent:
         assert "dataschema" not in ce
 
     def test_subject_is_policy_name(self):
-        """Subject is set to policy_name when present."""
-        event = _make_event(policy_name="policy.trading-limits")
+        """Subject is set to the first policy_names entry when present."""
+        event = _make_event(policy_names=["policy.trading-limits"])
         ce = wrap_as_cloudevent(event)
         assert ce["subject"] == "policy.trading-limits"
 
     def test_subject_falls_back_to_prompt_name(self):
-        """Subject falls back to prompt_name when policy_name is empty."""
+        """Subject falls back to first prompt_names entry."""
         event = _make_event(
             event_type="PROMPT_USED",
             event_category="governance",
-            prompt_name="prompt.customer-support-v3",
+            prompt_names=["prompt.customer-support-v3"],
         )
         ce = wrap_as_cloudevent(event)
         assert ce["subject"] == "prompt.customer-support-v3"

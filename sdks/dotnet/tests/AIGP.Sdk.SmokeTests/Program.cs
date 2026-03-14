@@ -23,6 +23,7 @@ internal static class Program
             CloudEventHelpers();
             CreateRejectsEmptyGovernanceHash();
             ValidateRequiresW3CTraceWhenSpanPresent();
+            ToAgentGPIngestEventStringifiesStructuredFields();
             ConformanceFixtures();
 
             Console.WriteLine(".NET smoke tests passed");
@@ -58,7 +59,8 @@ internal static class Program
         Expect(evt.EventType == "INJECT_SUCCESS", $"unexpected normalized event type {evt.EventType}");
         Expect(evt.EventCategory == "inject", $"unexpected normalized event category {evt.EventCategory}");
         Expect(!string.IsNullOrWhiteSpace(evt.TraceID), "trace_id should be auto-generated");
-        Expect(evt.SpecVersion == "0.12", $"unexpected default spec_version {evt.SpecVersion}");
+        Expect(evt.SpecVersion == "0.13", $"unexpected default spec_version {evt.SpecVersion}");
+        Expect(evt.Source == "aigp://default/agent.test", $"unexpected default source {evt.Source}");
 
         var errors = AIGP.ValidateAIGPEvent(evt);
         Expect(errors.Count == 0, "expected no validation errors");
@@ -270,6 +272,41 @@ internal static class Program
         var errors = AIGP.ValidateAIGPEvent(evt);
         Expect(errors.Any(e => e.Contains("trace_id must be 32-char lowercase hex when span_id is present", StringComparison.Ordinal)),
             "expected validation error for non-W3C trace_id with span_id");
+    }
+
+    private static void ToAgentGPIngestEventStringifiesStructuredFields()
+    {
+        var evt = AIGP.CreateAIGPEvent(new CreateEventOptions
+        {
+            EventType = "INJECT_SUCCESS",
+            EventCategory = "inject",
+            AgentID = "agent.test",
+            OrgID = "org.acme",
+            GovernanceHash = AIGP.ComputeGovernanceHash("policy", "sha256"),
+            Annotations = new Dictionary<string, object>
+            {
+                ["signed"] = new Dictionary<string, object> { ["scope"] = "prod" },
+            },
+            GovernanceMerkleTree = new GovernanceMerkleTree
+            {
+                Algorithm = "sha256",
+                ResourceCount = 1,
+                Resources = new List<MerkleLeaf>
+                {
+                    new MerkleLeaf
+                    {
+                        ResourceType = "policy",
+                        ResourceName = "policy.limits",
+                        Hash = new string('a', 64),
+                    },
+                },
+            },
+        });
+
+        var wire = AIGP.ToAgentGPIngestEvent(evt);
+        Expect((wire["source"] as string) == "aigp://org.acme/agent.test", "expected source in ingest payload");
+        Expect(wire["annotations"] is string, "expected annotations to be JSON string");
+        Expect(wire["governance_merkle_tree"] is string, "expected governance_merkle_tree to be JSON string");
     }
 
     private static void ConformanceFixtures()

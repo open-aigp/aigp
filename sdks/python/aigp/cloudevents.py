@@ -95,10 +95,14 @@ def wrap_as_cloudevent(
     if include_dataschema:
         ce["dataschema"] = AIGP_DATA_SCHEMA
 
-    # Subject: primary governed resource (policy or prompt name)
-    policy_name = aigp_event.get("policy_name", "")
-    prompt_name = aigp_event.get("prompt_name", "")
-    subject = policy_name or prompt_name
+    # Subject: primary governed resource (first policy_name or prompt_name)
+    policy_names = aigp_event.get("policy_names") or []
+    prompt_names = aigp_event.get("prompt_names") or []
+    subject = ""
+    if isinstance(policy_names, list) and policy_names and policy_names[0]:
+        subject = str(policy_names[0])
+    elif isinstance(prompt_names, list) and prompt_names and prompt_names[0]:
+        subject = str(prompt_names[0])
     if subject:
         ce["subject"] = subject
 

@@ -28,6 +28,12 @@ private fun allowsEmptyGovernanceHash(eventType: String): Boolean {
     return emptyGovernanceHashEventTypes.contains(eventType.trim())
 }
 
+private fun defaultSource(agentId: String, orgId: String): String {
+    val org = orgId.trim().ifBlank { "default" }
+    val agent = agentId.trim().ifBlank { "unknown-agent" }
+    return "$AIGP_SOURCE_SCHEME$org/$agent"
+}
+
 private val random = SecureRandom()
 
 interface EventSigner {
@@ -175,29 +181,32 @@ data class CreateEventOptions(
     val agentName: String = "",
     val orgId: String = "",
     val orgName: String = "",
-    val policyId: String = "",
-    val policyName: String = "",
-    val policyVersion: Int = 0,
-    val promptId: String = "",
-    val promptName: String = "",
-    val promptVersion: Int = 0,
     val hashType: String = "sha256",
+    val aigpHash: String = "",
+    val parentHash: String = "",
     val dataClassification: String = "",
-    val templateRendered: Boolean = false,
     val denialReason: String = "",
     val violationType: String = "",
     val severity: String = "",
-    val sourceIp: String = "",
     val requestMethod: String = "",
     val requestPath: String = "",
-    val queryHash: String = "",
-    val previousHash: String = "",
     val annotations: Map<String, Any> = emptyMap(),
     val eventSignature: String = "",
     val signatureKeyId: String = "",
     val sequenceNumber: Long = 0,
     val causalityRef: String = "",
-    val specVersion: String = "0.12",
+    val specVersion: String = "0.13",
+    val source: String = "",
+    val policyIds: List<String> = emptyList(),
+    val policyNames: List<String> = emptyList(),
+    val promptIds: List<String> = emptyList(),
+    val promptNames: List<String> = emptyList(),
+    val toolIds: List<String> = emptyList(),
+    val toolNames: List<String> = emptyList(),
+    val contextIds: List<String> = emptyList(),
+    val contextNames: List<String> = emptyList(),
+    val guardrailIds: List<String> = emptyList(),
+    val guardrailNames: List<String> = emptyList(),
     val governanceMerkleTree: GovernanceMerkleTree? = null,
 )
 
@@ -215,29 +224,32 @@ data class AIGPEvent(
     val agentName: String,
     val orgId: String,
     val orgName: String,
-    val policyId: String,
-    val policyName: String,
-    val policyVersion: Int,
-    val promptId: String,
-    val promptName: String,
-    val promptVersion: Int,
     val hashType: String,
+    val aigpHash: String,
+    val parentHash: String,
     val dataClassification: String,
-    val templateRendered: Boolean,
     val denialReason: String,
     val violationType: String,
     val severity: String,
-    val sourceIp: String,
     val requestMethod: String,
     val requestPath: String,
-    val queryHash: String,
-    val previousHash: String,
     val annotations: Map<String, Any>,
     val eventSignature: String,
     val signatureKeyId: String,
     val sequenceNumber: Long,
     val causalityRef: String,
     val specVersion: String,
+    val source: String,
+    val policyIds: List<String>,
+    val policyNames: List<String>,
+    val promptIds: List<String>,
+    val promptNames: List<String>,
+    val toolIds: List<String>,
+    val toolNames: List<String>,
+    val contextIds: List<String>,
+    val contextNames: List<String>,
+    val guardrailIds: List<String>,
+    val guardrailNames: List<String>,
     val governanceMerkleTree: GovernanceMerkleTree? = null,
 )
 
@@ -510,31 +522,108 @@ fun createAIGPEvent(options: CreateEventOptions): AIGPEvent {
         agentName = options.agentName,
         orgId = options.orgId,
         orgName = options.orgName,
-        policyId = options.policyId,
-        policyName = options.policyName,
-        policyVersion = options.policyVersion,
-        promptId = options.promptId,
-        promptName = options.promptName,
-        promptVersion = options.promptVersion,
         hashType = options.hashType,
+        aigpHash = options.aigpHash,
+        parentHash = options.parentHash,
         dataClassification = options.dataClassification,
-        templateRendered = options.templateRendered,
         denialReason = options.denialReason,
         violationType = options.violationType,
         severity = options.severity,
-        sourceIp = options.sourceIp,
         requestMethod = options.requestMethod,
         requestPath = options.requestPath,
-        queryHash = options.queryHash,
-        previousHash = options.previousHash,
         annotations = options.annotations,
         eventSignature = options.eventSignature,
         signatureKeyId = options.signatureKeyId,
         sequenceNumber = sequenceNumber,
         causalityRef = options.causalityRef,
         specVersion = options.specVersion,
+        source = options.source.ifBlank { defaultSource(options.agentId, options.orgId) },
+        policyIds = options.policyIds.toList(),
+        policyNames = options.policyNames.toList(),
+        promptIds = options.promptIds.toList(),
+        promptNames = options.promptNames.toList(),
+        toolIds = options.toolIds.toList(),
+        toolNames = options.toolNames.toList(),
+        contextIds = options.contextIds.toList(),
+        contextNames = options.contextNames.toList(),
+        guardrailIds = options.guardrailIds.toList(),
+        guardrailNames = options.guardrailNames.toList(),
         governanceMerkleTree = options.governanceMerkleTree,
     )
+}
+
+fun toAgentGPIngestEvent(event: AIGPEvent): Map<String, Any> {
+    val out = linkedMapOf<String, Any>(
+        "event_id" to event.eventId,
+        "event_type" to event.eventType,
+        "event_category" to event.eventCategory,
+        "event_time" to event.eventTime,
+        "agent_id" to event.agentId,
+        "governance_hash" to event.governanceHash,
+        "trace_id" to event.traceId,
+        "span_id" to event.spanId,
+        "parent_span_id" to event.parentSpanId,
+        "trace_flags" to event.traceFlags,
+        "agent_name" to event.agentName,
+        "org_id" to event.orgId,
+        "org_name" to event.orgName,
+        "hash_type" to event.hashType,
+        "aigp_hash" to event.aigpHash,
+        "parent_hash" to event.parentHash,
+        "data_classification" to event.dataClassification,
+        "denial_reason" to event.denialReason,
+        "violation_type" to event.violationType,
+        "severity" to event.severity,
+        "request_method" to event.requestMethod,
+        "request_path" to event.requestPath,
+        "event_signature" to event.eventSignature,
+        "signature_key_id" to event.signatureKeyId,
+        "sequence_number" to event.sequenceNumber,
+        "causality_ref" to event.causalityRef,
+        "spec_version" to event.specVersion.ifBlank { "0.13" },
+        "source" to event.source.ifBlank { defaultSource(event.agentId, event.orgId) },
+        "policy_ids" to event.policyIds,
+        "policy_names" to event.policyNames,
+        "prompt_ids" to event.promptIds,
+        "prompt_names" to event.promptNames,
+        "tool_ids" to event.toolIds,
+        "tool_names" to event.toolNames,
+        "context_ids" to event.contextIds,
+        "context_names" to event.contextNames,
+        "guardrail_ids" to event.guardrailIds,
+        "guardrail_names" to event.guardrailNames,
+        "annotations" to canonicalJson(event.annotations),
+    )
+
+    event.governanceMerkleTree?.let { tree ->
+        val treeMap = linkedMapOf<String, Any?>(
+            "algorithm" to tree.algorithm,
+            "resource_count" to tree.resourceCount,
+            "resources" to tree.resources.map { leaf ->
+                linkedMapOf<String, Any?>(
+                    "resource_type" to leaf.resourceType,
+                    "resource_name" to leaf.resourceName,
+                    "hash" to leaf.hash,
+                    "hash_mode" to leaf.hashMode,
+                    "content_ref" to leaf.contentRef,
+                ).filterValues { it != null }
+            },
+            "inclusion_proofs" to tree.inclusionProofs?.map { proof ->
+                linkedMapOf<String, Any>(
+                    "leaf_hash" to proof.leafHash,
+                    "proof_path" to proof.proofPath.map { step ->
+                        linkedMapOf(
+                            "sibling_hash" to step.siblingHash,
+                            "sibling_position" to step.siblingPosition,
+                        )
+                    },
+                )
+            },
+        ).filterValues { it != null }
+        out["governance_merkle_tree"] = canonicalJson(treeMap)
+    }
+
+    return out
 }
 
 fun validateAIGPEvent(event: AIGPEvent): List<String> {
@@ -613,7 +702,10 @@ fun wrapAsCloudEvent(event: AIGPEvent, includeDataschema: Boolean = true): Cloud
         data = event,
         time = event.eventTime.takeIf { it.isNotBlank() },
         dataschema = AIGP_DATA_SCHEMA.takeIf { includeDataschema },
-        subject = event.policyName.ifBlank { event.promptName }.takeIf { it.isNotBlank() },
+        subject = (
+            event.policyNames.firstOrNull { it.isNotBlank() }
+                ?: event.promptNames.firstOrNull { it.isNotBlank() }
+            ).takeIf { !it.isNullOrBlank() },
         aigpagentid = event.agentId,
         aigporgid = orgId.takeUnless { it == "default" },
         aigpcategory = event.eventCategory.takeIf { it.isNotBlank() },
@@ -666,27 +758,30 @@ private fun AIGPEvent.toSignableMap(): Map<String, Any> {
         "agent_name" to agentName,
         "org_id" to orgId,
         "org_name" to orgName,
-        "policy_id" to policyId,
-        "policy_name" to policyName,
-        "policy_version" to policyVersion,
-        "prompt_id" to promptId,
-        "prompt_name" to promptName,
-        "prompt_version" to promptVersion,
         "hash_type" to hashType,
+        "aigp_hash" to aigpHash,
+        "parent_hash" to parentHash,
         "data_classification" to dataClassification,
-        "template_rendered" to templateRendered,
         "denial_reason" to denialReason,
         "violation_type" to violationType,
         "severity" to severity,
-        "source_ip" to sourceIp,
         "request_method" to requestMethod,
         "request_path" to requestPath,
-        "query_hash" to queryHash,
-        "previous_hash" to previousHash,
         "annotations" to annotations,
         "sequence_number" to sequenceNumber,
         "causality_ref" to causalityRef,
         "spec_version" to specVersion,
+        "source" to source,
+        "policy_ids" to policyIds,
+        "policy_names" to policyNames,
+        "prompt_ids" to promptIds,
+        "prompt_names" to promptNames,
+        "tool_ids" to toolIds,
+        "tool_names" to toolNames,
+        "context_ids" to contextIds,
+        "context_names" to contextNames,
+        "guardrail_ids" to guardrailIds,
+        "guardrail_names" to guardrailNames,
     )
     governanceMerkleTree?.let { tree ->
         out["governance_merkle_tree"] = linkedMapOf(

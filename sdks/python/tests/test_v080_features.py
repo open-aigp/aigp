@@ -78,8 +78,8 @@ def sample_event():
         agent_id="agent.test-bot",
         trace_id="0" * 32,
         governance_hash=compute_governance_hash("test content"),
-        policy_name="policy.test",
-        policy_version=1,
+        policy_names=["policy.test"],
+        annotations={"policy_version": 1},
     )
 
 

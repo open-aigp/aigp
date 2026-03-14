@@ -33,3 +33,11 @@ val ce = wrapAsCloudEvent(event)
 - Signer boundary (`EventSigner`, `signEventWithSigner`)
 - Delivery reliability helpers (`RetryPolicy`, `ReliableEmitter`)
 - CloudEvents helpers
+
+## AgentGP Ingest Compatibility
+
+For AgentGP `POST /api/aigp/events`, convert canonical SDK events to the current ingest wire profile:
+
+```kotlin
+val wireEvent = toAgentGPIngestEvent(event)
+```

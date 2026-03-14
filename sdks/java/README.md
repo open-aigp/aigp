@@ -44,3 +44,11 @@ AIGP.CloudEvent ce = AIGP.wrapAsCloudEvent(event, true);
 - Signer boundary (`EventSigner`, `signEventWithSigner`)
 - Delivery reliability helpers (`RetryPolicy`, `ReliableEmitter`)
 - CloudEvents helpers (`wrapAsCloudEvent`, `unwrapFromCloudEvent`, `buildCEHeaders`)
+
+## AgentGP Ingest Compatibility
+
+For AgentGP `POST /api/aigp/events`, convert canonical SDK events to the current ingest wire profile:
+
+```java
+Map<String, Object> wireEvent = AIGP.toAgentGPIngestEvent(event);
+```

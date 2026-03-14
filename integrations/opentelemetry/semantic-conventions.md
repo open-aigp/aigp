@@ -4,7 +4,7 @@
 
 **Status:** Experimental
 
-**Companion to:** [AIGP Specification v0.12](../../spec/aigp-spec.md)
+**Companion to:** [AIGP Specification v0.13](../../spec/aigp-spec.md)
 
 ---
 
@@ -311,7 +311,7 @@ AIGP attributes complement (not replace) the existing `gen_ai.*` namespace:
 
 ## References
 
-- [AIGP Specification v0.12](../../spec/aigp-spec.md)
+- [AIGP Specification v0.13](../../spec/aigp-spec.md)
 - [OpenTelemetry Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/)
 - [OpenTelemetry GenAI Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/)
 - [W3C Trace Context](https://www.w3.org/TR/trace-context/)

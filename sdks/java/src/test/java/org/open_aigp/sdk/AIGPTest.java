@@ -41,8 +41,39 @@ class AIGPTest {
         assertEquals("INJECT_SUCCESS", event.eventType);
         assertEquals("inject", event.eventCategory);
         assertTrue(event.traceId.matches("^[a-f0-9]{32}$"));
-        assertEquals("0.12", event.specVersion);
+        assertEquals("0.13", event.specVersion);
+        assertEquals("aigp://default/agent.test", event.source);
         assertEquals(0, AIGP.validateAIGPEvent(event).size());
+    }
+
+    @Test
+    void toAgentGPIngestEventStringifiesStructuredFields() {
+        AIGP.CreateEventOptions options = new AIGP.CreateEventOptions();
+        options.eventType = "INJECT_SUCCESS";
+        options.eventCategory = "inject";
+        options.agentId = "agent.test";
+        options.orgId = "org.acme";
+        options.governanceHash = AIGP.computeGovernanceHash("policy", "sha256");
+
+        Map<String, Object> annotations = new LinkedHashMap<String, Object>();
+        Map<String, Object> signed = new LinkedHashMap<String, Object>();
+        signed.put("scope", "prod");
+        annotations.put("signed", signed);
+        options.annotations = annotations;
+
+        String hash = new String(new char[64]).replace('\0', 'a');
+        AIGP.GovernanceMerkleTree tree = new AIGP.GovernanceMerkleTree(
+            "sha256",
+            1,
+            Arrays.asList(new AIGP.MerkleLeaf("policy", "policy.limits", hash, null, null))
+        );
+        options.governanceMerkleTree = tree;
+
+        AIGP.AIGPEvent event = AIGP.createAIGPEvent(options);
+        Map<String, Object> wire = AIGP.toAgentGPIngestEvent(event);
+        assertEquals("aigp://org.acme/agent.test", wire.get("source"));
+        assertTrue(wire.get("annotations") instanceof String);
+        assertTrue(wire.get("governance_merkle_tree") instanceof String);
     }
 
     @Test
@@ -144,7 +175,7 @@ class AIGPTest {
         options.eventCategory = "inject";
         options.agentId = "agent.test";
         options.orgId = "org.acme";
-        options.policyName = "policy.limits";
+        options.policyNames = Arrays.asList("policy.limits");
         options.governanceHash = AIGP.computeGovernanceHash("policy", "sha256");
 
         AIGP.AIGPEvent event = AIGP.createAIGPEvent(options);

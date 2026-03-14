@@ -44,6 +44,23 @@ Success looks like:
 - Delivery reliability helpers: `RetryPolicy`, `ReliableEmitter`
 - CloudEvents transport: `wrapAsCloudEvent`, `unwrapFromCloudEvent`, `buildCEHeaders`
 
+## AgentGP Ingest Compatibility
+
+For AgentGP `POST /api/aigp/events`, convert canonical SDK events to the current ingest wire profile:
+
+```ts
+import { createAIGPEvent, toAgentGPIngestEvent } from "@aigp/sdk";
+
+const event = createAIGPEvent({
+  event_type: "INJECT_SUCCESS",
+  event_category: "inject",
+  agent_id: "agent.test",
+  governance_hash: "a".repeat(64),
+});
+
+const wireEvent = toAgentGPIngestEvent(event);
+```
+
 ## Event Type Normalization
 
 Non-conformant event names (for example `myplatform.audit.login`) are normalized to `UPPER_SNAKE_CASE` (for example `MYPLATFORM_AUDIT_LOGIN`).

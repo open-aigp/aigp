@@ -100,29 +100,32 @@ pub struct CreateEventOptions {
     pub agent_name: Option<String>,
     pub org_id: Option<String>,
     pub org_name: Option<String>,
-    pub policy_id: Option<String>,
-    pub policy_name: Option<String>,
-    pub policy_version: Option<i64>,
-    pub prompt_id: Option<String>,
-    pub prompt_name: Option<String>,
-    pub prompt_version: Option<i64>,
     pub hash_type: Option<String>,
+    pub aigp_hash: Option<String>,
+    pub parent_hash: Option<String>,
     pub data_classification: Option<String>,
-    pub template_rendered: Option<bool>,
     pub denial_reason: Option<String>,
     pub violation_type: Option<String>,
     pub severity: Option<String>,
-    pub source_ip: Option<String>,
     pub request_method: Option<String>,
     pub request_path: Option<String>,
-    pub query_hash: Option<String>,
-    pub previous_hash: Option<String>,
     pub annotations: Option<BTreeMap<String, JsonValue>>,
     pub event_signature: Option<String>,
     pub signature_key_id: Option<String>,
     pub sequence_number: Option<i64>,
     pub causality_ref: Option<String>,
     pub spec_version: Option<String>,
+    pub source: Option<String>,
+    pub policy_ids: Option<Vec<String>>,
+    pub policy_names: Option<Vec<String>>,
+    pub prompt_ids: Option<Vec<String>>,
+    pub prompt_names: Option<Vec<String>>,
+    pub tool_ids: Option<Vec<String>>,
+    pub tool_names: Option<Vec<String>>,
+    pub context_ids: Option<Vec<String>>,
+    pub context_names: Option<Vec<String>>,
+    pub guardrail_ids: Option<Vec<String>>,
+    pub guardrail_names: Option<Vec<String>>,
     pub governance_merkle_tree: Option<GovernanceMerkleTree>,
 }
 
@@ -141,29 +144,32 @@ pub struct AIGPEvent {
     pub agent_name: String,
     pub org_id: String,
     pub org_name: String,
-    pub policy_id: String,
-    pub policy_name: String,
-    pub policy_version: i64,
-    pub prompt_id: String,
-    pub prompt_name: String,
-    pub prompt_version: i64,
     pub hash_type: String,
+    pub aigp_hash: String,
+    pub parent_hash: String,
     pub data_classification: String,
-    pub template_rendered: bool,
     pub denial_reason: String,
     pub violation_type: String,
     pub severity: String,
-    pub source_ip: String,
     pub request_method: String,
     pub request_path: String,
-    pub query_hash: String,
-    pub previous_hash: String,
     pub annotations: BTreeMap<String, JsonValue>,
     pub event_signature: String,
     pub signature_key_id: String,
     pub sequence_number: i64,
     pub causality_ref: String,
     pub spec_version: String,
+    pub source: String,
+    pub policy_ids: Vec<String>,
+    pub policy_names: Vec<String>,
+    pub prompt_ids: Vec<String>,
+    pub prompt_names: Vec<String>,
+    pub tool_ids: Vec<String>,
+    pub tool_names: Vec<String>,
+    pub context_ids: Vec<String>,
+    pub context_names: Vec<String>,
+    pub guardrail_ids: Vec<String>,
+    pub guardrail_names: Vec<String>,
     pub governance_merkle_tree: Option<GovernanceMerkleTree>,
 }
 
@@ -184,6 +190,20 @@ pub struct CloudEvent {
     pub aigpseverity: Option<String>,
     pub aigphashtype: Option<String>,
     pub data: AIGPEvent,
+}
+
+fn default_source(agent_id: &str, org_id: &str) -> String {
+    let org = if org_id.trim().is_empty() {
+        "default"
+    } else {
+        org_id.trim()
+    };
+    let agent = if agent_id.trim().is_empty() {
+        "unknown-agent"
+    } else {
+        agent_id.trim()
+    };
+    format!("{AIGP_SOURCE_SCHEME}{org}/{agent}")
 }
 
 pub trait EventSigner {
@@ -609,14 +629,21 @@ pub fn sign_event_with_signer(
     signer: &dyn EventSigner,
 ) -> Result<AIGPEvent, String> {
     let mut header = BTreeMap::<String, JsonValue>::new();
-    header.insert("alg".to_string(), JsonValue::String(signer.algorithm().to_string()));
+    header.insert(
+        "alg".to_string(),
+        JsonValue::String(signer.algorithm().to_string()),
+    );
     header.insert("typ".to_string(), JsonValue::String("JWT".to_string()));
     if !signer.key_id().trim().is_empty() {
-        header.insert("kid".to_string(), JsonValue::String(signer.key_id().to_string()));
+        header.insert(
+            "kid".to_string(),
+            JsonValue::String(signer.key_id().to_string()),
+        );
     }
 
     let signable_payload = signable_event_json(event);
-    let header_b64 = base64url_encode(canonicalize_json_value(&JsonValue::Object(header)).as_bytes());
+    let header_b64 =
+        base64url_encode(canonicalize_json_value(&JsonValue::Object(header)).as_bytes());
     let payload_b64 = base64url_encode(canonicalize_json_value(&signable_payload).as_bytes());
     let signing_input = format!("{header_b64}.{payload_b64}");
 
@@ -630,51 +657,73 @@ pub fn sign_event_with_signer(
 
 fn signable_event_json(event: &AIGPEvent) -> JsonValue {
     let mut obj = BTreeMap::<String, JsonValue>::new();
-    obj.insert("event_id".to_string(), JsonValue::String(event.event_id.clone()));
-    obj.insert("event_type".to_string(), JsonValue::String(event.event_type.clone()));
-    obj.insert("event_category".to_string(), JsonValue::String(event.event_category.clone()));
-    obj.insert("event_time".to_string(), JsonValue::String(event.event_time.clone()));
-    obj.insert("agent_id".to_string(), JsonValue::String(event.agent_id.clone()));
+    obj.insert(
+        "event_id".to_string(),
+        JsonValue::String(event.event_id.clone()),
+    );
+    obj.insert(
+        "event_type".to_string(),
+        JsonValue::String(event.event_type.clone()),
+    );
+    obj.insert(
+        "event_category".to_string(),
+        JsonValue::String(event.event_category.clone()),
+    );
+    obj.insert(
+        "event_time".to_string(),
+        JsonValue::String(event.event_time.clone()),
+    );
+    obj.insert(
+        "agent_id".to_string(),
+        JsonValue::String(event.agent_id.clone()),
+    );
     obj.insert(
         "governance_hash".to_string(),
         JsonValue::String(event.governance_hash.clone()),
     );
-    obj.insert("trace_id".to_string(), JsonValue::String(event.trace_id.clone()));
-    obj.insert("span_id".to_string(), JsonValue::String(event.span_id.clone()));
+    obj.insert(
+        "trace_id".to_string(),
+        JsonValue::String(event.trace_id.clone()),
+    );
+    obj.insert(
+        "span_id".to_string(),
+        JsonValue::String(event.span_id.clone()),
+    );
     obj.insert(
         "parent_span_id".to_string(),
         JsonValue::String(event.parent_span_id.clone()),
     );
-    obj.insert("trace_flags".to_string(), JsonValue::String(event.trace_flags.clone()));
-    obj.insert("agent_name".to_string(), JsonValue::String(event.agent_name.clone()));
-    obj.insert("org_id".to_string(), JsonValue::String(event.org_id.clone()));
-    obj.insert("org_name".to_string(), JsonValue::String(event.org_name.clone()));
-    obj.insert("policy_id".to_string(), JsonValue::String(event.policy_id.clone()));
     obj.insert(
-        "policy_name".to_string(),
-        JsonValue::String(event.policy_name.clone()),
+        "trace_flags".to_string(),
+        JsonValue::String(event.trace_flags.clone()),
     );
     obj.insert(
-        "policy_version".to_string(),
-        JsonValue::Number(event.policy_version.to_string()),
-    );
-    obj.insert("prompt_id".to_string(), JsonValue::String(event.prompt_id.clone()));
-    obj.insert(
-        "prompt_name".to_string(),
-        JsonValue::String(event.prompt_name.clone()),
+        "agent_name".to_string(),
+        JsonValue::String(event.agent_name.clone()),
     );
     obj.insert(
-        "prompt_version".to_string(),
-        JsonValue::Number(event.prompt_version.to_string()),
+        "org_id".to_string(),
+        JsonValue::String(event.org_id.clone()),
     );
-    obj.insert("hash_type".to_string(), JsonValue::String(event.hash_type.clone()));
+    obj.insert(
+        "org_name".to_string(),
+        JsonValue::String(event.org_name.clone()),
+    );
+    obj.insert(
+        "hash_type".to_string(),
+        JsonValue::String(event.hash_type.clone()),
+    );
+    obj.insert(
+        "aigp_hash".to_string(),
+        JsonValue::String(event.aigp_hash.clone()),
+    );
+    obj.insert(
+        "parent_hash".to_string(),
+        JsonValue::String(event.parent_hash.clone()),
+    );
     obj.insert(
         "data_classification".to_string(),
         JsonValue::String(event.data_classification.clone()),
-    );
-    obj.insert(
-        "template_rendered".to_string(),
-        JsonValue::Bool(event.template_rendered),
     );
     obj.insert(
         "denial_reason".to_string(),
@@ -684,8 +733,10 @@ fn signable_event_json(event: &AIGPEvent) -> JsonValue {
         "violation_type".to_string(),
         JsonValue::String(event.violation_type.clone()),
     );
-    obj.insert("severity".to_string(), JsonValue::String(event.severity.clone()));
-    obj.insert("source_ip".to_string(), JsonValue::String(event.source_ip.clone()));
+    obj.insert(
+        "severity".to_string(),
+        JsonValue::String(event.severity.clone()),
+    );
     obj.insert(
         "request_method".to_string(),
         JsonValue::String(event.request_method.clone()),
@@ -693,11 +744,6 @@ fn signable_event_json(event: &AIGPEvent) -> JsonValue {
     obj.insert(
         "request_path".to_string(),
         JsonValue::String(event.request_path.clone()),
-    );
-    obj.insert("query_hash".to_string(), JsonValue::String(event.query_hash.clone()));
-    obj.insert(
-        "previous_hash".to_string(),
-        JsonValue::String(event.previous_hash.clone()),
     );
     obj.insert(
         "annotations".to_string(),
@@ -715,6 +761,50 @@ fn signable_event_json(event: &AIGPEvent) -> JsonValue {
         "spec_version".to_string(),
         JsonValue::String(event.spec_version.clone()),
     );
+    obj.insert(
+        "source".to_string(),
+        JsonValue::String(event.source.clone()),
+    );
+    obj.insert(
+        "policy_ids".to_string(),
+        JsonValue::Array(event.policy_ids.iter().cloned().map(JsonValue::String).collect()),
+    );
+    obj.insert(
+        "policy_names".to_string(),
+        JsonValue::Array(event.policy_names.iter().cloned().map(JsonValue::String).collect()),
+    );
+    obj.insert(
+        "prompt_ids".to_string(),
+        JsonValue::Array(event.prompt_ids.iter().cloned().map(JsonValue::String).collect()),
+    );
+    obj.insert(
+        "prompt_names".to_string(),
+        JsonValue::Array(event.prompt_names.iter().cloned().map(JsonValue::String).collect()),
+    );
+    obj.insert(
+        "tool_ids".to_string(),
+        JsonValue::Array(event.tool_ids.iter().cloned().map(JsonValue::String).collect()),
+    );
+    obj.insert(
+        "tool_names".to_string(),
+        JsonValue::Array(event.tool_names.iter().cloned().map(JsonValue::String).collect()),
+    );
+    obj.insert(
+        "context_ids".to_string(),
+        JsonValue::Array(event.context_ids.iter().cloned().map(JsonValue::String).collect()),
+    );
+    obj.insert(
+        "context_names".to_string(),
+        JsonValue::Array(event.context_names.iter().cloned().map(JsonValue::String).collect()),
+    );
+    obj.insert(
+        "guardrail_ids".to_string(),
+        JsonValue::Array(event.guardrail_ids.iter().cloned().map(JsonValue::String).collect()),
+    );
+    obj.insert(
+        "guardrail_names".to_string(),
+        JsonValue::Array(event.guardrail_names.iter().cloned().map(JsonValue::String).collect()),
+    );
     if let Some(tree) = &event.governance_merkle_tree {
         obj.insert(
             "governance_merkle_tree".to_string(),
@@ -726,7 +816,10 @@ fn signable_event_json(event: &AIGPEvent) -> JsonValue {
 
 fn governance_merkle_tree_to_json(tree: &GovernanceMerkleTree) -> JsonValue {
     let mut obj = BTreeMap::<String, JsonValue>::new();
-    obj.insert("algorithm".to_string(), JsonValue::String(tree.algorithm.clone()));
+    obj.insert(
+        "algorithm".to_string(),
+        JsonValue::String(tree.algorithm.clone()),
+    );
     obj.insert(
         "resource_count".to_string(),
         JsonValue::Number(tree.resource_count.to_string()),
@@ -890,46 +983,103 @@ pub fn create_aigp_event(options: CreateEventOptions) -> Result<AIGPEvent, Strin
         Some(_) | None if allows_empty_governance_hash(&event_type) => String::new(),
         _ => return Err("governance_hash is required and cannot be empty".to_string()),
     };
+    let resolved_agent_id = options.agent_id.clone();
+    let resolved_org_id = options.org_id.clone().unwrap_or_default();
+    let resolved_source = options
+        .source
+        .unwrap_or_else(|| default_source(&resolved_agent_id, &resolved_org_id));
 
     Ok(AIGPEvent {
         event_id: generate_event_id()?,
         event_type,
         event_category: normalize_event_category(options.event_category.as_deref().unwrap_or("")),
         event_time: now_iso8601_utc(),
-        agent_id: options.agent_id,
+        agent_id: resolved_agent_id,
         governance_hash,
         trace_id,
         span_id: options.span_id.unwrap_or_default(),
         parent_span_id: options.parent_span_id.unwrap_or_default(),
         trace_flags: options.trace_flags.unwrap_or_default(),
         agent_name: options.agent_name.unwrap_or_default(),
-        org_id: options.org_id.unwrap_or_default(),
+        org_id: resolved_org_id,
         org_name: options.org_name.unwrap_or_default(),
-        policy_id: options.policy_id.unwrap_or_default(),
-        policy_name: options.policy_name.unwrap_or_default(),
-        policy_version: options.policy_version.unwrap_or(0),
-        prompt_id: options.prompt_id.unwrap_or_default(),
-        prompt_name: options.prompt_name.unwrap_or_default(),
-        prompt_version: options.prompt_version.unwrap_or(0),
         hash_type: options.hash_type.unwrap_or_else(|| "sha256".to_string()),
+        aigp_hash: options.aigp_hash.unwrap_or_default(),
+        parent_hash: options.parent_hash.unwrap_or_default(),
         data_classification: options.data_classification.unwrap_or_default(),
-        template_rendered: options.template_rendered.unwrap_or(false),
         denial_reason: options.denial_reason.unwrap_or_default(),
         violation_type: options.violation_type.unwrap_or_default(),
         severity: options.severity.unwrap_or_default(),
-        source_ip: options.source_ip.unwrap_or_default(),
         request_method: options.request_method.unwrap_or_default(),
         request_path: options.request_path.unwrap_or_default(),
-        query_hash: options.query_hash.unwrap_or_default(),
-        previous_hash: options.previous_hash.unwrap_or_default(),
         annotations: options.annotations.unwrap_or_default(),
         event_signature: options.event_signature.unwrap_or_default(),
         signature_key_id: options.signature_key_id.unwrap_or_default(),
         sequence_number,
         causality_ref: options.causality_ref.unwrap_or_default(),
-        spec_version: options.spec_version.unwrap_or_else(|| "0.12".to_string()),
+        spec_version: options.spec_version.unwrap_or_else(|| "0.13".to_string()),
+        source: resolved_source,
+        policy_ids: options.policy_ids.unwrap_or_default(),
+        policy_names: options.policy_names.unwrap_or_default(),
+        prompt_ids: options.prompt_ids.unwrap_or_default(),
+        prompt_names: options.prompt_names.unwrap_or_default(),
+        tool_ids: options.tool_ids.unwrap_or_default(),
+        tool_names: options.tool_names.unwrap_or_default(),
+        context_ids: options.context_ids.unwrap_or_default(),
+        context_names: options.context_names.unwrap_or_default(),
+        guardrail_ids: options.guardrail_ids.unwrap_or_default(),
+        guardrail_names: options.guardrail_names.unwrap_or_default(),
         governance_merkle_tree: options.governance_merkle_tree,
     })
+}
+
+pub fn to_agentgp_ingest_event(event: &AIGPEvent) -> Result<BTreeMap<String, JsonValue>, String> {
+    let mut out = match signable_event_json(event) {
+        JsonValue::Object(map) => map,
+        _ => return Err("internal error: expected object".to_string()),
+    };
+
+    out.insert(
+        "event_signature".to_string(),
+        JsonValue::String(event.event_signature.clone()),
+    );
+    out.insert(
+        "signature_key_id".to_string(),
+        JsonValue::String(event.signature_key_id.clone()),
+    );
+
+    if event.spec_version.trim().is_empty() {
+        out.insert(
+            "spec_version".to_string(),
+            JsonValue::String("0.13".to_string()),
+        );
+    }
+    if event.source.trim().is_empty() {
+        out.insert(
+            "source".to_string(),
+            JsonValue::String(default_source(&event.agent_id, &event.org_id)),
+        );
+    }
+
+    if let Some(value) = out.get("annotations").cloned() {
+        if !matches!(value, JsonValue::String(_)) {
+            out.insert(
+                "annotations".to_string(),
+                JsonValue::String(canonicalize_json_value(&value)),
+            );
+        }
+    }
+
+    if let Some(value) = out.get("governance_merkle_tree").cloned() {
+        if !matches!(value, JsonValue::String(_)) {
+            out.insert(
+                "governance_merkle_tree".to_string(),
+                JsonValue::String(canonicalize_json_value(&value)),
+            );
+        }
+    }
+
+    Ok(out)
 }
 
 fn next_sequence_number(agent_id: &str, trace_id: &str) -> i64 {
@@ -1033,10 +1183,10 @@ pub fn wrap_as_cloudevent(
         } else {
             None
         },
-        subject: if !event.policy_name.is_empty() {
-            Some(event.policy_name.clone())
-        } else if !event.prompt_name.is_empty() {
-            Some(event.prompt_name.clone())
+        subject: if !event.policy_names.is_empty() && !event.policy_names[0].is_empty() {
+            Some(event.policy_names[0].clone())
+        } else if !event.prompt_names.is_empty() && !event.prompt_names[0].is_empty() {
+            Some(event.prompt_names[0].clone())
         } else {
             None
         },
@@ -1687,29 +1837,32 @@ mod tests {
             agent_name: None,
             org_id: None,
             org_name: None,
-            policy_id: None,
-            policy_name: None,
-            policy_version: None,
-            prompt_id: None,
-            prompt_name: None,
-            prompt_version: None,
             hash_type: None,
+            aigp_hash: None,
+            parent_hash: None,
             data_classification: None,
-            template_rendered: None,
             denial_reason: None,
             violation_type: None,
             severity: None,
-            source_ip: None,
             request_method: None,
             request_path: None,
-            query_hash: None,
-            previous_hash: None,
             annotations: None,
             event_signature: None,
             signature_key_id: None,
             sequence_number: None,
             causality_ref: None,
             spec_version: None,
+            source: None,
+            policy_ids: None,
+            policy_names: Some(vec!["policy.limits".to_string()]),
+            prompt_ids: None,
+            prompt_names: None,
+            tool_ids: None,
+            tool_names: None,
+            context_ids: None,
+            context_names: None,
+            guardrail_ids: None,
+            guardrail_names: None,
             governance_merkle_tree: None,
         })
         .unwrap();
@@ -1717,8 +1870,90 @@ mod tests {
         assert_eq!(event.event_type, "INJECT_SUCCESS");
         assert_eq!(event.event_category, "inject");
         assert_eq!(event.trace_id.len(), 32);
-        assert_eq!(event.spec_version, "0.12");
+        assert_eq!(event.spec_version, "0.13");
+        assert_eq!(event.source, "aigp://default/agent.test");
         assert!(validate_aigp_event(&event).is_empty());
+    }
+
+    #[test]
+    fn to_agentgp_ingest_event_stringifies_structured_fields() {
+        let event = create_aigp_event(CreateEventOptions {
+            event_type: "INJECT_SUCCESS".to_string(),
+            event_category: Some("inject".to_string()),
+            agent_id: "agent.test".to_string(),
+            trace_id: None,
+            governance_hash: Some(compute_governance_hash("policy", Some("sha256")).unwrap()),
+            span_id: None,
+            parent_span_id: None,
+            trace_flags: None,
+            agent_name: None,
+            org_id: Some("org.acme".to_string()),
+            org_name: None,
+            hash_type: None,
+            aigp_hash: None,
+            parent_hash: None,
+            data_classification: None,
+            denial_reason: None,
+            violation_type: None,
+            severity: None,
+            request_method: None,
+            request_path: None,
+            annotations: Some({
+                let mut ann = BTreeMap::new();
+                ann.insert(
+                    "signed".to_string(),
+                    JsonValue::Object({
+                        let mut signed = BTreeMap::new();
+                        signed.insert("scope".to_string(), JsonValue::String("prod".to_string()));
+                        signed
+                    }),
+                );
+                ann
+            }),
+            event_signature: None,
+            signature_key_id: None,
+            sequence_number: None,
+            causality_ref: None,
+            spec_version: None,
+            source: None,
+            policy_ids: None,
+            policy_names: Some(vec!["policy.limits".to_string()]),
+            prompt_ids: None,
+            prompt_names: None,
+            tool_ids: None,
+            tool_names: None,
+            context_ids: None,
+            context_names: None,
+            guardrail_ids: None,
+            guardrail_names: None,
+            governance_merkle_tree: Some(GovernanceMerkleTree {
+                algorithm: "sha256".to_string(),
+                resource_count: 1,
+                resources: vec![MerkleLeaf {
+                    resource_type: "policy".to_string(),
+                    resource_name: "policy.limits".to_string(),
+                    hash: "a".repeat(64),
+                    hash_mode: None,
+                    content_ref: None,
+                }],
+                inclusion_proofs: None,
+            }),
+        })
+        .unwrap();
+
+        let wire = to_agentgp_ingest_event(&event).unwrap();
+        assert_eq!(
+            wire.get("source"),
+            Some(&JsonValue::String("aigp://org.acme/agent.test".to_string()))
+        );
+        assert!(matches!(
+            wire.get("annotations"),
+            Some(JsonValue::String(_))
+        ));
+        assert!(matches!(
+            wire.get("governance_merkle_tree"),
+            Some(JsonValue::String(_))
+        ));
     }
 
     #[test]
@@ -1758,7 +1993,10 @@ mod tests {
         let proofs = tree.inclusion_proofs.unwrap();
         assert_eq!(proofs.len(), tree.resource_count);
         for proof in &proofs {
-            assert!(verify_inclusion_proof(&result.root_hash, &proof.leaf_hash, &proof.proof_path).unwrap());
+            assert!(
+                verify_inclusion_proof(&result.root_hash, &proof.leaf_hash, &proof.proof_path)
+                    .unwrap()
+            );
         }
     }
 
@@ -1813,29 +2051,32 @@ mod tests {
             agent_name: None,
             org_id: None,
             org_name: None,
-            policy_id: None,
-            policy_name: None,
-            policy_version: None,
-            prompt_id: None,
-            prompt_name: None,
-            prompt_version: None,
             hash_type: None,
+            aigp_hash: None,
+            parent_hash: None,
             data_classification: None,
-            template_rendered: None,
             denial_reason: None,
             violation_type: None,
             severity: None,
-            source_ip: None,
             request_method: None,
             request_path: None,
-            query_hash: None,
-            previous_hash: None,
             annotations: None,
             event_signature: None,
             signature_key_id: None,
             sequence_number: None,
             causality_ref: None,
             spec_version: None,
+            source: None,
+            policy_ids: None,
+            policy_names: Some(vec!["policy.limits".to_string()]),
+            prompt_ids: None,
+            prompt_names: None,
+            tool_ids: None,
+            tool_names: None,
+            context_ids: None,
+            context_names: None,
+            guardrail_ids: None,
+            guardrail_names: None,
             governance_merkle_tree: None,
         })
         .unwrap();
@@ -1886,29 +2127,32 @@ mod tests {
             agent_name: "".to_string(),
             org_id: "".to_string(),
             org_name: "".to_string(),
-            policy_id: "".to_string(),
-            policy_name: "".to_string(),
-            policy_version: 0,
-            prompt_id: "".to_string(),
-            prompt_name: "".to_string(),
-            prompt_version: 0,
             hash_type: "sha256".to_string(),
+            aigp_hash: "".to_string(),
+            parent_hash: "".to_string(),
             data_classification: "".to_string(),
-            template_rendered: false,
             denial_reason: "".to_string(),
             violation_type: "".to_string(),
             severity: "".to_string(),
-            source_ip: "".to_string(),
             request_method: "".to_string(),
             request_path: "".to_string(),
-            query_hash: "".to_string(),
-            previous_hash: "".to_string(),
             annotations: BTreeMap::new(),
             event_signature: "".to_string(),
             signature_key_id: "".to_string(),
             sequence_number: 1,
             causality_ref: "".to_string(),
-            spec_version: "0.12".to_string(),
+            spec_version: "0.13".to_string(),
+            source: "aigp://default/agent.test".to_string(),
+            policy_ids: vec![],
+            policy_names: vec![],
+            prompt_ids: vec![],
+            prompt_names: vec![],
+            tool_ids: vec![],
+            tool_names: vec![],
+            context_ids: vec![],
+            context_names: vec![],
+            guardrail_ids: vec![],
+            guardrail_names: vec![],
             governance_merkle_tree: None,
         };
 
@@ -1949,29 +2193,32 @@ mod tests {
             agent_name: None,
             org_id: Some("org.acme".to_string()),
             org_name: None,
-            policy_id: None,
-            policy_name: Some("policy.limits".to_string()),
-            policy_version: None,
-            prompt_id: None,
-            prompt_name: None,
-            prompt_version: None,
             hash_type: None,
+            aigp_hash: None,
+            parent_hash: None,
             data_classification: None,
-            template_rendered: None,
             denial_reason: None,
             violation_type: None,
             severity: None,
-            source_ip: None,
             request_method: None,
             request_path: None,
-            query_hash: None,
-            previous_hash: None,
             annotations: None,
             event_signature: None,
             signature_key_id: None,
             sequence_number: None,
             causality_ref: None,
             spec_version: None,
+            source: None,
+            policy_ids: None,
+            policy_names: Some(vec!["policy.limits".to_string()]),
+            prompt_ids: None,
+            prompt_names: None,
+            tool_ids: None,
+            tool_names: None,
+            context_ids: None,
+            context_names: None,
+            guardrail_ids: None,
+            guardrail_names: None,
             governance_merkle_tree: None,
         })
         .unwrap();
@@ -2006,29 +2253,32 @@ mod tests {
             agent_name: None,
             org_id: None,
             org_name: None,
-            policy_id: None,
-            policy_name: None,
-            policy_version: None,
-            prompt_id: None,
-            prompt_name: None,
-            prompt_version: None,
             hash_type: None,
+            aigp_hash: None,
+            parent_hash: None,
             data_classification: None,
-            template_rendered: None,
             denial_reason: None,
             violation_type: None,
             severity: None,
-            source_ip: None,
             request_method: None,
             request_path: None,
-            query_hash: None,
-            previous_hash: None,
             annotations: None,
             event_signature: None,
             signature_key_id: None,
             sequence_number: None,
             causality_ref: None,
             spec_version: None,
+            source: None,
+            policy_ids: None,
+            policy_names: None,
+            prompt_ids: None,
+            prompt_names: None,
+            tool_ids: None,
+            tool_names: None,
+            context_ids: None,
+            context_names: None,
+            guardrail_ids: None,
+            guardrail_names: None,
             governance_merkle_tree: None,
         });
 
@@ -2049,29 +2299,32 @@ mod tests {
             agent_name: None,
             org_id: None,
             org_name: None,
-            policy_id: None,
-            policy_name: None,
-            policy_version: None,
-            prompt_id: None,
-            prompt_name: None,
-            prompt_version: None,
             hash_type: None,
+            aigp_hash: None,
+            parent_hash: None,
             data_classification: None,
-            template_rendered: None,
             denial_reason: None,
             violation_type: None,
             severity: None,
-            source_ip: None,
             request_method: None,
             request_path: None,
-            query_hash: None,
-            previous_hash: None,
             annotations: None,
             event_signature: None,
             signature_key_id: None,
             sequence_number: None,
             causality_ref: None,
             spec_version: None,
+            source: None,
+            policy_ids: None,
+            policy_names: None,
+            prompt_ids: None,
+            prompt_names: None,
+            tool_ids: None,
+            tool_names: None,
+            context_ids: None,
+            context_names: None,
+            guardrail_ids: None,
+            guardrail_names: None,
             governance_merkle_tree: None,
         })
         .unwrap();
@@ -2140,30 +2393,33 @@ mod tests {
                 agent_name: None,
                 org_id: None,
                 org_name: None,
-                policy_id: None,
-                policy_name: None,
-                policy_version: None,
-                prompt_id: None,
-                prompt_name: None,
-                prompt_version: None,
                 hash_type: None,
-                data_classification: None,
-                template_rendered: None,
+            aigp_hash: None,
+            parent_hash: None,
+            data_classification: None,
                 denial_reason: None,
                 violation_type: None,
                 severity: None,
-                source_ip: None,
                 request_method: None,
                 request_path: None,
-                query_hash: None,
-                previous_hash: None,
                 annotations: None,
                 event_signature: None,
                 signature_key_id: None,
                 sequence_number: Some(sequence_number),
                 causality_ref: Some(row["causality_ref"].to_string()),
                 spec_version: None,
-                governance_merkle_tree: None,
+                source: None,
+            policy_ids: None,
+            policy_names: None,
+            prompt_ids: None,
+            prompt_names: None,
+            tool_ids: None,
+            tool_names: None,
+            context_ids: None,
+            context_names: None,
+            guardrail_ids: None,
+            guardrail_names: None,
+            governance_merkle_tree: None,
             });
             let mut is_valid = false;
             if let Ok(mut event) = event_result {

@@ -8,8 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
-- Specification line advanced to `0.12`; spec, schema docs, examples, SDK defaults, and integration companion docs aligned.
+- Specification line advanced to `0.13`; spec, schema docs, examples, SDK defaults, and integration companion docs aligned.
 - Canonical Merkle resource array key is now `governance_merkle_tree.resources` across spec/schema/examples/SDK emitters; legacy `leaves` alias support removed from schema and SDK helpers.
+- SDK parity update (Python/TypeScript/Go/Rust/Java/Kotlin/.NET): added AgentGP ingest compatibility helpers that preserve canonical AIGP in-memory shape and emit current AgentGP wire profile (`source` defaulting + JSON-string transport fields for `annotations` and `governance_merkle_tree`).
 - Repository topology split into dedicated repos:
   - `open-aigp/aigp` (spec, schema, conformance)
   - `open-aigp/aigp-sdks` (all language SDKs)

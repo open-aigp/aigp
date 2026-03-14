@@ -60,12 +60,12 @@ from typing import Any
 PRODUCER = "https://github.com/open-aigp/aigp"
 
 RUN_FACET_SCHEMA_URL = (
-    "https://github.com/open-aigp/aigp/blob/v0.12/"
+    "https://github.com/open-aigp/aigp/blob/v0.13/"
     "integrations/openlineage/facets/AIGPGovernanceRunFacet.json"
 )
 
 RESOURCE_FACET_SCHEMA_URL = (
-    "https://github.com/open-aigp/aigp/blob/v0.12/"
+    "https://github.com/open-aigp/aigp/blob/v0.13/"
     "integrations/openlineage/facets/AIGPResourceInputFacet.json"
 )
 
@@ -104,7 +104,7 @@ def build_governance_run_facet(aigp_event: dict[str, Any]) -> dict[str, Any]:
         "resourceCount": resource_count,
         "agentId": aigp_event.get("agent_id", ""),
         "traceId": aigp_event.get("trace_id", ""),
-        "specVersion": aigp_event.get("spec_version", "0.12"),
+        "specVersion": aigp_event.get("spec_version", "0.13"),
     }
 
     # Infer enforcement result from event type (case-insensitive)
@@ -130,7 +130,7 @@ def build_resource_input_facets(
 
     If the event has a ``governance_merkle_tree``, produces one facet per resource.
     Otherwise, produces a single facet from the event's primary resource
-    (``policy_name`` or ``prompt_name``).
+    arrays (``policy_names`` or ``prompt_names``).
 
     Args:
         aigp_event: AIGP event dict.
@@ -164,16 +164,21 @@ def build_resource_input_facets(
     annotations = aigp_event.get("annotations", {}) or {}
     event_type = (aigp_event.get("event_type", "") or "").upper()
 
-    if aigp_event.get("policy_name"):
+    policy_names = aigp_event.get("policy_names") or []
+    prompt_names = aigp_event.get("prompt_names") or []
+
+    if isinstance(policy_names, list) and policy_names:
         facet["resourceType"] = "policy"
-        facet["resourceName"] = aigp_event["policy_name"]
-        if aigp_event.get("policy_version"):
-            facet["resourceVersion"] = aigp_event["policy_version"]
-    elif aigp_event.get("prompt_name"):
+        facet["resourceName"] = str(policy_names[0])
+        policy_version = annotations.get("policy_version")
+        if isinstance(policy_version, int) and policy_version > 0:
+            facet["resourceVersion"] = policy_version
+    elif isinstance(prompt_names, list) and prompt_names:
         facet["resourceType"] = "prompt"
-        facet["resourceName"] = aigp_event["prompt_name"]
-        if aigp_event.get("prompt_version"):
-            facet["resourceVersion"] = aigp_event["prompt_version"]
+        facet["resourceName"] = str(prompt_names[0])
+        prompt_version = annotations.get("prompt_version")
+        if isinstance(prompt_version, int) and prompt_version > 0:
+            facet["resourceVersion"] = prompt_version
     elif event_type in ("TOOL_INVOKED", "TOOL_DENIED"):
         tool_name = annotations.get("tool_name", "")
         if not tool_name:

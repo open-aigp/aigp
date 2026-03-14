@@ -47,3 +47,15 @@ Success looks like:
 - Signer boundary (`EventSigner`, `NewES256PrivateKeySigner`, `SignEventWithSigner`)
 - Delivery reliability helpers (`RetryPolicy`, `ReliableEmitter`)
 - CloudEvents helpers (`WrapAsCloudEvent`, `UnwrapFromCloudEvent`, `BuildCEHeaders`)
+
+## AgentGP Ingest Compatibility
+
+For AgentGP `POST /api/aigp/events`, convert canonical SDK events to the current ingest wire profile:
+
+```go
+wireEvent, err := aigp.ToAgentGPIngestEvent(event)
+if err != nil {
+    panic(err)
+}
+_ = wireEvent
+```

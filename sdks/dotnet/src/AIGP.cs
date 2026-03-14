@@ -509,23 +509,15 @@ namespace AIGP.Sdk
                 AgentName = options.AgentName ?? string.Empty,
                 OrgID = options.OrgID ?? string.Empty,
                 OrgName = options.OrgName ?? string.Empty,
-                PolicyID = options.PolicyID ?? string.Empty,
-                PolicyName = options.PolicyName ?? string.Empty,
-                PolicyVersion = options.PolicyVersion,
-                PromptID = options.PromptID ?? string.Empty,
-                PromptName = options.PromptName ?? string.Empty,
-                PromptVersion = options.PromptVersion,
                 HashType = string.IsNullOrWhiteSpace(options.HashType) ? "sha256" : options.HashType,
+                AIGPHash = options.AIGPHash ?? string.Empty,
+                ParentHash = options.ParentHash ?? string.Empty,
                 DataClassification = options.DataClassification ?? string.Empty,
-                TemplateRendered = options.TemplateRendered,
                 DenialReason = options.DenialReason ?? string.Empty,
                 ViolationType = options.ViolationType ?? string.Empty,
                 Severity = options.Severity ?? string.Empty,
-                SourceIP = options.SourceIP ?? string.Empty,
                 RequestMethod = options.RequestMethod ?? string.Empty,
                 RequestPath = options.RequestPath ?? string.Empty,
-                QueryHash = options.QueryHash ?? string.Empty,
-                PreviousHash = options.PreviousHash ?? string.Empty,
                 Annotations = options.Annotations ?? new Dictionary<string, object>(),
                 EventSignature = options.EventSignature ?? string.Empty,
                 SignatureKeyID = options.SignatureKeyID ?? string.Empty,
@@ -533,7 +525,20 @@ namespace AIGP.Sdk
                     ? options.SequenceNumber
                     : NextSequenceNumber(options.AgentID ?? string.Empty, traceId),
                 CausalityRef = options.CausalityRef ?? string.Empty,
-                SpecVersion = string.IsNullOrWhiteSpace(options.SpecVersion) ? "0.12" : options.SpecVersion,
+                SpecVersion = string.IsNullOrWhiteSpace(options.SpecVersion) ? "0.13" : options.SpecVersion,
+                Source = string.IsNullOrWhiteSpace(options.Source)
+                    ? DefaultSource(options.AgentID ?? string.Empty, options.OrgID ?? string.Empty)
+                    : options.Source.Trim(),
+                PolicyIDs = options.PolicyIDs?.ToList() ?? new List<string>(),
+                PolicyNames = options.PolicyNames?.ToList() ?? new List<string>(),
+                PromptIDs = options.PromptIDs?.ToList() ?? new List<string>(),
+                PromptNames = options.PromptNames?.ToList() ?? new List<string>(),
+                ToolIDs = options.ToolIDs?.ToList() ?? new List<string>(),
+                ToolNames = options.ToolNames?.ToList() ?? new List<string>(),
+                ContextIDs = options.ContextIDs?.ToList() ?? new List<string>(),
+                ContextNames = options.ContextNames?.ToList() ?? new List<string>(),
+                GuardrailIDs = options.GuardrailIDs?.ToList() ?? new List<string>(),
+                GuardrailNames = options.GuardrailNames?.ToList() ?? new List<string>(),
                 GovernanceMerkleTree = options.GovernanceMerkleTree,
             };
         }
@@ -638,6 +643,13 @@ namespace AIGP.Sdk
             return EmptyGovernanceHashEventTypes.Contains((eventType ?? string.Empty).Trim());
         }
 
+        private static string DefaultSource(string agentID, string orgID)
+        {
+            var resolvedOrg = string.IsNullOrWhiteSpace(orgID) ? "default" : orgID.Trim();
+            var resolvedAgent = string.IsNullOrWhiteSpace(agentID) ? "unknown-agent" : agentID.Trim();
+            return AIGPSourceScheme + resolvedOrg + "/" + resolvedAgent;
+        }
+
         public static string CeTypeFromEventType(string eventType)
         {
             return AIGPTypePrefix + NormalizeEventType(eventType).ToLowerInvariant();
@@ -670,9 +682,11 @@ namespace AIGP.Sdk
                 Datacontenttype = "application/json",
                 Time = string.IsNullOrWhiteSpace(eventData.EventTime) ? null : eventData.EventTime,
                 Dataschema = includeDataschema ? AIGPDataSchema : null,
-                Subject = !string.IsNullOrWhiteSpace(eventData.PolicyName)
-                    ? eventData.PolicyName
-                    : (!string.IsNullOrWhiteSpace(eventData.PromptName) ? eventData.PromptName : null),
+                Subject = (eventData.PolicyNames != null && eventData.PolicyNames.Count > 0 && !string.IsNullOrWhiteSpace(eventData.PolicyNames[0]))
+                    ? eventData.PolicyNames[0]
+                    : ((eventData.PromptNames != null && eventData.PromptNames.Count > 0 && !string.IsNullOrWhiteSpace(eventData.PromptNames[0]))
+                        ? eventData.PromptNames[0]
+                        : null),
                 AigpAgentId = eventData.AgentID,
                 AigpOrgId = orgId == "default" ? null : orgId,
                 AigpCategory = string.IsNullOrWhiteSpace(eventData.EventCategory) ? null : eventData.EventCategory,
@@ -748,6 +762,36 @@ namespace AIGP.Sdk
             return headers;
         }
 
+        public static Dictionary<string, object> ToAgentGPIngestEvent(AIGPEvent eventData)
+        {
+            if (eventData == null)
+            {
+                throw new ArgumentNullException(nameof(eventData));
+            }
+
+            var payload = new Dictionary<string, object>(BuildEventMap(eventData), StringComparer.Ordinal);
+            if (!payload.TryGetValue("spec_version", out var specVersionObj) || string.IsNullOrWhiteSpace(specVersionObj?.ToString()))
+            {
+                payload["spec_version"] = "0.13";
+            }
+
+            if (!payload.TryGetValue("source", out var sourceObj) || string.IsNullOrWhiteSpace(sourceObj?.ToString()))
+            {
+                payload["source"] = DefaultSource(eventData.AgentID ?? string.Empty, eventData.OrgID ?? string.Empty);
+            }
+
+            if (payload.TryGetValue("annotations", out var annotationsObj) && annotationsObj != null && !(annotationsObj is string))
+            {
+                payload["annotations"] = CanonicalJson(annotationsObj);
+            }
+            if (payload.TryGetValue("governance_merkle_tree", out var treeObj) && treeObj != null && !(treeObj is string))
+            {
+                payload["governance_merkle_tree"] = CanonicalJson(treeObj);
+            }
+
+            return payload;
+        }
+
         private static AIGPEvent CopyEvent(AIGPEvent src)
         {
             if (src == null)
@@ -770,23 +814,15 @@ namespace AIGP.Sdk
                 AgentName = src.AgentName,
                 OrgID = src.OrgID,
                 OrgName = src.OrgName,
-                PolicyID = src.PolicyID,
-                PolicyName = src.PolicyName,
-                PolicyVersion = src.PolicyVersion,
-                PromptID = src.PromptID,
-                PromptName = src.PromptName,
-                PromptVersion = src.PromptVersion,
                 HashType = src.HashType,
+                AIGPHash = src.AIGPHash,
+                ParentHash = src.ParentHash,
                 DataClassification = src.DataClassification,
-                TemplateRendered = src.TemplateRendered,
                 DenialReason = src.DenialReason,
                 ViolationType = src.ViolationType,
                 Severity = src.Severity,
-                SourceIP = src.SourceIP,
                 RequestMethod = src.RequestMethod,
                 RequestPath = src.RequestPath,
-                QueryHash = src.QueryHash,
-                PreviousHash = src.PreviousHash,
                 Annotations = src.Annotations == null
                     ? new Dictionary<string, object>()
                     : new Dictionary<string, object>(src.Annotations, StringComparer.Ordinal),
@@ -795,6 +831,17 @@ namespace AIGP.Sdk
                 SequenceNumber = src.SequenceNumber,
                 CausalityRef = src.CausalityRef,
                 SpecVersion = src.SpecVersion,
+                Source = src.Source,
+                PolicyIDs = src.PolicyIDs == null ? new List<string>() : new List<string>(src.PolicyIDs),
+                PolicyNames = src.PolicyNames == null ? new List<string>() : new List<string>(src.PolicyNames),
+                PromptIDs = src.PromptIDs == null ? new List<string>() : new List<string>(src.PromptIDs),
+                PromptNames = src.PromptNames == null ? new List<string>() : new List<string>(src.PromptNames),
+                ToolIDs = src.ToolIDs == null ? new List<string>() : new List<string>(src.ToolIDs),
+                ToolNames = src.ToolNames == null ? new List<string>() : new List<string>(src.ToolNames),
+                ContextIDs = src.ContextIDs == null ? new List<string>() : new List<string>(src.ContextIDs),
+                ContextNames = src.ContextNames == null ? new List<string>() : new List<string>(src.ContextNames),
+                GuardrailIDs = src.GuardrailIDs == null ? new List<string>() : new List<string>(src.GuardrailIDs),
+                GuardrailNames = src.GuardrailNames == null ? new List<string>() : new List<string>(src.GuardrailNames),
                 GovernanceMerkleTree = src.GovernanceMerkleTree,
             };
         }
@@ -816,34 +863,89 @@ namespace AIGP.Sdk
                 ["agent_name"] = eventData.AgentName ?? string.Empty,
                 ["org_id"] = eventData.OrgID ?? string.Empty,
                 ["org_name"] = eventData.OrgName ?? string.Empty,
-                ["policy_id"] = eventData.PolicyID ?? string.Empty,
-                ["policy_name"] = eventData.PolicyName ?? string.Empty,
-                ["policy_version"] = eventData.PolicyVersion,
-                ["prompt_id"] = eventData.PromptID ?? string.Empty,
-                ["prompt_name"] = eventData.PromptName ?? string.Empty,
-                ["prompt_version"] = eventData.PromptVersion,
                 ["hash_type"] = eventData.HashType ?? string.Empty,
+                ["aigp_hash"] = eventData.AIGPHash ?? string.Empty,
+                ["parent_hash"] = eventData.ParentHash ?? string.Empty,
                 ["data_classification"] = eventData.DataClassification ?? string.Empty,
-                ["template_rendered"] = eventData.TemplateRendered,
                 ["denial_reason"] = eventData.DenialReason ?? string.Empty,
                 ["violation_type"] = eventData.ViolationType ?? string.Empty,
                 ["severity"] = eventData.Severity ?? string.Empty,
-                ["source_ip"] = eventData.SourceIP ?? string.Empty,
                 ["request_method"] = eventData.RequestMethod ?? string.Empty,
                 ["request_path"] = eventData.RequestPath ?? string.Empty,
-                ["query_hash"] = eventData.QueryHash ?? string.Empty,
-                ["previous_hash"] = eventData.PreviousHash ?? string.Empty,
                 ["annotations"] = eventData.Annotations ?? new Dictionary<string, object>(),
+                ["event_signature"] = eventData.EventSignature ?? string.Empty,
+                ["signature_key_id"] = eventData.SignatureKeyID ?? string.Empty,
                 ["sequence_number"] = eventData.SequenceNumber,
                 ["causality_ref"] = eventData.CausalityRef ?? string.Empty,
-                ["spec_version"] = eventData.SpecVersion ?? "0.12",
+                ["spec_version"] = eventData.SpecVersion ?? "0.13",
+                ["source"] = string.IsNullOrWhiteSpace(eventData.Source)
+                    ? DefaultSource(eventData.AgentID ?? string.Empty, eventData.OrgID ?? string.Empty)
+                    : eventData.Source,
+                ["policy_ids"] = eventData.PolicyIDs ?? new List<string>(),
+                ["policy_names"] = eventData.PolicyNames ?? new List<string>(),
+                ["prompt_ids"] = eventData.PromptIDs ?? new List<string>(),
+                ["prompt_names"] = eventData.PromptNames ?? new List<string>(),
+                ["tool_ids"] = eventData.ToolIDs ?? new List<string>(),
+                ["tool_names"] = eventData.ToolNames ?? new List<string>(),
+                ["context_ids"] = eventData.ContextIDs ?? new List<string>(),
+                ["context_names"] = eventData.ContextNames ?? new List<string>(),
+                ["guardrail_ids"] = eventData.GuardrailIDs ?? new List<string>(),
+                ["guardrail_names"] = eventData.GuardrailNames ?? new List<string>(),
             };
 
             if (eventData.GovernanceMerkleTree != null)
             {
-                payload["governance_merkle_tree"] = eventData.GovernanceMerkleTree;
+                payload["governance_merkle_tree"] = GovernanceMerkleTreeToMap(eventData.GovernanceMerkleTree);
             }
             return payload;
+        }
+
+        private static Dictionary<string, object> GovernanceMerkleTreeToMap(GovernanceMerkleTree tree)
+        {
+            var outMap = new Dictionary<string, object>(StringComparer.Ordinal)
+            {
+                ["algorithm"] = tree.Algorithm ?? "sha256",
+                ["resource_count"] = tree.ResourceCount,
+                ["resources"] = (tree.Resources ?? new List<MerkleLeaf>())
+                    .Select(l =>
+                    {
+                        var m = new Dictionary<string, object>(StringComparer.Ordinal)
+                        {
+                            ["resource_type"] = l.ResourceType ?? string.Empty,
+                            ["resource_name"] = l.ResourceName ?? string.Empty,
+                            ["hash"] = l.Hash ?? string.Empty,
+                        };
+                        if (!string.IsNullOrWhiteSpace(l.HashMode))
+                        {
+                            m["hash_mode"] = l.HashMode;
+                        }
+                        if (!string.IsNullOrWhiteSpace(l.ContentRef))
+                        {
+                            m["content_ref"] = l.ContentRef;
+                        }
+                        return (object)m;
+                    })
+                    .ToList(),
+            };
+
+            if (tree.InclusionProofs != null && tree.InclusionProofs.Count > 0)
+            {
+                outMap["inclusion_proofs"] = tree.InclusionProofs.Select(p =>
+                    (object)new Dictionary<string, object>(StringComparer.Ordinal)
+                    {
+                        ["leaf_hash"] = p.LeafHash ?? string.Empty,
+                        ["proof_path"] = (p.ProofPath ?? new List<MerkleProofStep>()).Select(step =>
+                            (object)new Dictionary<string, object>(StringComparer.Ordinal)
+                            {
+                                ["sibling_hash"] = step.SiblingHash ?? string.Empty,
+                                ["sibling_position"] = step.SiblingPosition ?? string.Empty,
+                            }
+                        ).ToList(),
+                    }
+                ).ToList();
+            }
+
+            return outMap;
         }
 
         private static string Base64UrlEncode(byte[] bytes)
@@ -1133,29 +1235,32 @@ namespace AIGP.Sdk
         public string AgentName { get; set; } = string.Empty;
         public string OrgID { get; set; } = string.Empty;
         public string OrgName { get; set; } = string.Empty;
-        public string PolicyID { get; set; } = string.Empty;
-        public string PolicyName { get; set; } = string.Empty;
-        public int PolicyVersion { get; set; }
-        public string PromptID { get; set; } = string.Empty;
-        public string PromptName { get; set; } = string.Empty;
-        public int PromptVersion { get; set; }
         public string HashType { get; set; } = "sha256";
+        public string AIGPHash { get; set; } = string.Empty;
+        public string ParentHash { get; set; } = string.Empty;
         public string DataClassification { get; set; } = string.Empty;
-        public bool TemplateRendered { get; set; }
         public string DenialReason { get; set; } = string.Empty;
         public string ViolationType { get; set; } = string.Empty;
         public string Severity { get; set; } = string.Empty;
-        public string SourceIP { get; set; } = string.Empty;
         public string RequestMethod { get; set; } = string.Empty;
         public string RequestPath { get; set; } = string.Empty;
-        public string QueryHash { get; set; } = string.Empty;
-        public string PreviousHash { get; set; } = string.Empty;
         public Dictionary<string, object> Annotations { get; set; }
         public string EventSignature { get; set; } = string.Empty;
         public string SignatureKeyID { get; set; } = string.Empty;
         public long SequenceNumber { get; set; }
         public string CausalityRef { get; set; } = string.Empty;
-        public string SpecVersion { get; set; } = "0.12";
+        public string SpecVersion { get; set; } = "0.13";
+        public string Source { get; set; } = string.Empty;
+        public List<string> PolicyIDs { get; set; } = new List<string>();
+        public List<string> PolicyNames { get; set; } = new List<string>();
+        public List<string> PromptIDs { get; set; } = new List<string>();
+        public List<string> PromptNames { get; set; } = new List<string>();
+        public List<string> ToolIDs { get; set; } = new List<string>();
+        public List<string> ToolNames { get; set; } = new List<string>();
+        public List<string> ContextIDs { get; set; } = new List<string>();
+        public List<string> ContextNames { get; set; } = new List<string>();
+        public List<string> GuardrailIDs { get; set; } = new List<string>();
+        public List<string> GuardrailNames { get; set; } = new List<string>();
         public GovernanceMerkleTree GovernanceMerkleTree { get; set; }
     }
 
@@ -1187,39 +1292,20 @@ namespace AIGP.Sdk
 
         public string OrgName { get; set; } = string.Empty;
 
-        public string PolicyID { get; set; } = string.Empty;
-
-        public string PolicyName { get; set; } = string.Empty;
-
-        public int PolicyVersion { get; set; }
-
-        public string PromptID { get; set; } = string.Empty;
-
-        public string PromptName { get; set; } = string.Empty;
-
-        public int PromptVersion { get; set; }
-
         public string HashType { get; set; } = "sha256";
+        public string AIGPHash { get; set; } = string.Empty;
+        public string ParentHash { get; set; } = string.Empty;
 
         public string DataClassification { get; set; } = string.Empty;
-
-        public bool TemplateRendered { get; set; }
 
         public string DenialReason { get; set; } = string.Empty;
 
         public string ViolationType { get; set; } = string.Empty;
 
         public string Severity { get; set; } = string.Empty;
-
-        public string SourceIP { get; set; } = string.Empty;
-
         public string RequestMethod { get; set; } = string.Empty;
 
         public string RequestPath { get; set; } = string.Empty;
-
-        public string QueryHash { get; set; } = string.Empty;
-
-        public string PreviousHash { get; set; } = string.Empty;
 
         public Dictionary<string, object> Annotations { get; set; } = new Dictionary<string, object>();
 
@@ -1231,7 +1317,18 @@ namespace AIGP.Sdk
 
         public string CausalityRef { get; set; } = string.Empty;
 
-        public string SpecVersion { get; set; } = "0.12";
+        public string SpecVersion { get; set; } = "0.13";
+        public string Source { get; set; } = string.Empty;
+        public List<string> PolicyIDs { get; set; } = new List<string>();
+        public List<string> PolicyNames { get; set; } = new List<string>();
+        public List<string> PromptIDs { get; set; } = new List<string>();
+        public List<string> PromptNames { get; set; } = new List<string>();
+        public List<string> ToolIDs { get; set; } = new List<string>();
+        public List<string> ToolNames { get; set; } = new List<string>();
+        public List<string> ContextIDs { get; set; } = new List<string>();
+        public List<string> ContextNames { get; set; } = new List<string>();
+        public List<string> GuardrailIDs { get; set; } = new List<string>();
+        public List<string> GuardrailNames { get; set; } = new List<string>();
 
         public GovernanceMerkleTree GovernanceMerkleTree { get; set; }
     }

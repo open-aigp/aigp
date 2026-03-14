@@ -319,29 +319,32 @@ public final class AIGP {
         public String agentName;
         public String orgId;
         public String orgName;
-        public String policyId;
-        public String policyName;
-        public int policyVersion;
-        public String promptId;
-        public String promptName;
-        public int promptVersion;
         public String hashType;
+        public String aigpHash;
+        public String parentHash;
         public String dataClassification;
-        public boolean templateRendered;
         public String denialReason;
         public String violationType;
         public String severity;
-        public String sourceIp;
         public String requestMethod;
         public String requestPath;
-        public String queryHash;
-        public String previousHash;
         public Map<String, Object> annotations;
         public String eventSignature;
         public String signatureKeyId;
         public long sequenceNumber;
         public String causalityRef;
         public String specVersion;
+        public String source;
+        public List<String> policyIds;
+        public List<String> policyNames;
+        public List<String> promptIds;
+        public List<String> promptNames;
+        public List<String> toolIds;
+        public List<String> toolNames;
+        public List<String> contextIds;
+        public List<String> contextNames;
+        public List<String> guardrailIds;
+        public List<String> guardrailNames;
         public GovernanceMerkleTree governanceMerkleTree;
     }
 
@@ -359,29 +362,32 @@ public final class AIGP {
         public String agentName;
         public String orgId;
         public String orgName;
-        public String policyId;
-        public String policyName;
-        public int policyVersion;
-        public String promptId;
-        public String promptName;
-        public int promptVersion;
         public String hashType;
+        public String aigpHash;
+        public String parentHash;
         public String dataClassification;
-        public boolean templateRendered;
         public String denialReason;
         public String violationType;
         public String severity;
-        public String sourceIp;
         public String requestMethod;
         public String requestPath;
-        public String queryHash;
-        public String previousHash;
         public Map<String, Object> annotations;
         public String eventSignature;
         public String signatureKeyId;
         public long sequenceNumber;
         public String causalityRef;
         public String specVersion;
+        public String source;
+        public List<String> policyIds;
+        public List<String> policyNames;
+        public List<String> promptIds;
+        public List<String> promptNames;
+        public List<String> toolIds;
+        public List<String> toolNames;
+        public List<String> contextIds;
+        public List<String> contextNames;
+        public List<String> guardrailIds;
+        public List<String> guardrailNames;
         public GovernanceMerkleTree governanceMerkleTree;
 
         public Map<String, Object> toMap() {
@@ -399,29 +405,32 @@ public final class AIGP {
             out.put("agent_name", agentName);
             out.put("org_id", orgId);
             out.put("org_name", orgName);
-            out.put("policy_id", policyId);
-            out.put("policy_name", policyName);
-            out.put("policy_version", policyVersion);
-            out.put("prompt_id", promptId);
-            out.put("prompt_name", promptName);
-            out.put("prompt_version", promptVersion);
             out.put("hash_type", hashType);
+            out.put("aigp_hash", aigpHash);
+            out.put("parent_hash", parentHash);
             out.put("data_classification", dataClassification);
-            out.put("template_rendered", templateRendered);
             out.put("denial_reason", denialReason);
             out.put("violation_type", violationType);
             out.put("severity", severity);
-            out.put("source_ip", sourceIp);
             out.put("request_method", requestMethod);
             out.put("request_path", requestPath);
-            out.put("query_hash", queryHash);
-            out.put("previous_hash", previousHash);
             out.put("annotations", annotations == null ? Collections.<String, Object>emptyMap() : annotations);
             out.put("event_signature", eventSignature);
             out.put("signature_key_id", signatureKeyId);
             out.put("sequence_number", sequenceNumber);
             out.put("causality_ref", causalityRef);
             out.put("spec_version", specVersion);
+            out.put("source", source);
+            out.put("policy_ids", policyIds == null ? Collections.emptyList() : policyIds);
+            out.put("policy_names", policyNames == null ? Collections.emptyList() : policyNames);
+            out.put("prompt_ids", promptIds == null ? Collections.emptyList() : promptIds);
+            out.put("prompt_names", promptNames == null ? Collections.emptyList() : promptNames);
+            out.put("tool_ids", toolIds == null ? Collections.emptyList() : toolIds);
+            out.put("tool_names", toolNames == null ? Collections.emptyList() : toolNames);
+            out.put("context_ids", contextIds == null ? Collections.emptyList() : contextIds);
+            out.put("context_names", contextNames == null ? Collections.emptyList() : contextNames);
+            out.put("guardrail_ids", guardrailIds == null ? Collections.emptyList() : guardrailIds);
+            out.put("guardrail_names", guardrailNames == null ? Collections.emptyList() : guardrailNames);
             if (governanceMerkleTree != null) {
                 out.put("governance_merkle_tree", governanceMerkleTree.toMap());
             }
@@ -754,23 +763,15 @@ public final class AIGP {
         event.agentName = nullToEmpty(options.agentName);
         event.orgId = nullToEmpty(options.orgId);
         event.orgName = nullToEmpty(options.orgName);
-        event.policyId = nullToEmpty(options.policyId);
-        event.policyName = nullToEmpty(options.policyName);
-        event.policyVersion = options.policyVersion;
-        event.promptId = nullToEmpty(options.promptId);
-        event.promptName = nullToEmpty(options.promptName);
-        event.promptVersion = options.promptVersion;
         event.hashType = isBlank(options.hashType) ? "sha256" : options.hashType;
+        event.aigpHash = nullToEmpty(options.aigpHash);
+        event.parentHash = nullToEmpty(options.parentHash);
         event.dataClassification = nullToEmpty(options.dataClassification);
-        event.templateRendered = options.templateRendered;
         event.denialReason = nullToEmpty(options.denialReason);
         event.violationType = nullToEmpty(options.violationType);
         event.severity = nullToEmpty(options.severity);
-        event.sourceIp = nullToEmpty(options.sourceIp);
         event.requestMethod = nullToEmpty(options.requestMethod);
         event.requestPath = nullToEmpty(options.requestPath);
-        event.queryHash = nullToEmpty(options.queryHash);
-        event.previousHash = nullToEmpty(options.previousHash);
         event.annotations = options.annotations == null ? new LinkedHashMap<String, Object>() : options.annotations;
         event.eventSignature = nullToEmpty(options.eventSignature);
         event.signatureKeyId = nullToEmpty(options.signatureKeyId);
@@ -778,7 +779,18 @@ public final class AIGP {
             ? options.sequenceNumber
             : nextSequenceNumber(event.agentId, event.traceId);
         event.causalityRef = nullToEmpty(options.causalityRef);
-        event.specVersion = isBlank(options.specVersion) ? "0.12" : options.specVersion;
+        event.specVersion = isBlank(options.specVersion) ? "0.13" : options.specVersion;
+        event.source = isBlank(options.source) ? defaultSource(event.agentId, event.orgId) : safeTrim(options.source);
+        event.policyIds = options.policyIds == null ? new ArrayList<String>() : new ArrayList<String>(options.policyIds);
+        event.policyNames = options.policyNames == null ? new ArrayList<String>() : new ArrayList<String>(options.policyNames);
+        event.promptIds = options.promptIds == null ? new ArrayList<String>() : new ArrayList<String>(options.promptIds);
+        event.promptNames = options.promptNames == null ? new ArrayList<String>() : new ArrayList<String>(options.promptNames);
+        event.toolIds = options.toolIds == null ? new ArrayList<String>() : new ArrayList<String>(options.toolIds);
+        event.toolNames = options.toolNames == null ? new ArrayList<String>() : new ArrayList<String>(options.toolNames);
+        event.contextIds = options.contextIds == null ? new ArrayList<String>() : new ArrayList<String>(options.contextIds);
+        event.contextNames = options.contextNames == null ? new ArrayList<String>() : new ArrayList<String>(options.contextNames);
+        event.guardrailIds = options.guardrailIds == null ? new ArrayList<String>() : new ArrayList<String>(options.guardrailIds);
+        event.guardrailNames = options.guardrailNames == null ? new ArrayList<String>() : new ArrayList<String>(options.guardrailNames);
         event.governanceMerkleTree = options.governanceMerkleTree;
 
         return event;
@@ -871,10 +883,10 @@ public final class AIGP {
         if (includeDataschema) {
             ce.dataschema = AIGP_DATA_SCHEMA;
         }
-        if (!isBlank(event.policyName)) {
-            ce.subject = event.policyName;
-        } else if (!isBlank(event.promptName)) {
-            ce.subject = event.promptName;
+        if (event.policyNames != null && !event.policyNames.isEmpty() && !isBlank(event.policyNames.get(0))) {
+            ce.subject = event.policyNames.get(0);
+        } else if (event.promptNames != null && !event.promptNames.isEmpty() && !isBlank(event.promptNames.get(0))) {
+            ce.subject = event.promptNames.get(0);
         }
         if (!"default".equals(orgId)) {
             ce.aigporgid = orgId;
@@ -945,6 +957,35 @@ public final class AIGP {
         return headers;
     }
 
+    public static Map<String, Object> toAgentGPIngestEvent(AIGPEvent event) {
+        if (event == null) {
+            throw new IllegalArgumentException("event is required");
+        }
+
+        Map<String, Object> out = new LinkedHashMap<String, Object>(event.toMap());
+        String specVersion = String.valueOf(out.get("spec_version") == null ? "" : out.get("spec_version")).trim();
+        if (isBlank(specVersion)) {
+            out.put("spec_version", "0.13");
+        }
+
+        String source = String.valueOf(out.get("source") == null ? "" : out.get("source")).trim();
+        if (isBlank(source)) {
+            out.put("source", defaultSource(event.agentId, event.orgId));
+        }
+
+        Object annotations = out.get("annotations");
+        if (annotations != null && !(annotations instanceof String)) {
+            out.put("annotations", canonicalJson(annotations));
+        }
+
+        Object merkle = out.get("governance_merkle_tree");
+        if (merkle != null && !(merkle instanceof String)) {
+            out.put("governance_merkle_tree", canonicalJson(merkle));
+        }
+
+        return out;
+    }
+
     private static AIGPEvent copyEvent(AIGPEvent src) {
         if (src == null) {
             return null;
@@ -964,29 +1005,32 @@ public final class AIGP {
         out.agentName = src.agentName;
         out.orgId = src.orgId;
         out.orgName = src.orgName;
-        out.policyId = src.policyId;
-        out.policyName = src.policyName;
-        out.policyVersion = src.policyVersion;
-        out.promptId = src.promptId;
-        out.promptName = src.promptName;
-        out.promptVersion = src.promptVersion;
         out.hashType = src.hashType;
+        out.aigpHash = src.aigpHash;
+        out.parentHash = src.parentHash;
         out.dataClassification = src.dataClassification;
-        out.templateRendered = src.templateRendered;
         out.denialReason = src.denialReason;
         out.violationType = src.violationType;
         out.severity = src.severity;
-        out.sourceIp = src.sourceIp;
         out.requestMethod = src.requestMethod;
         out.requestPath = src.requestPath;
-        out.queryHash = src.queryHash;
-        out.previousHash = src.previousHash;
         out.annotations = src.annotations == null ? new LinkedHashMap<String, Object>() : new LinkedHashMap<String, Object>(src.annotations);
         out.eventSignature = src.eventSignature;
         out.signatureKeyId = src.signatureKeyId;
         out.sequenceNumber = src.sequenceNumber;
         out.causalityRef = src.causalityRef;
         out.specVersion = src.specVersion;
+        out.source = src.source;
+        out.policyIds = src.policyIds == null ? new ArrayList<String>() : new ArrayList<String>(src.policyIds);
+        out.policyNames = src.policyNames == null ? new ArrayList<String>() : new ArrayList<String>(src.policyNames);
+        out.promptIds = src.promptIds == null ? new ArrayList<String>() : new ArrayList<String>(src.promptIds);
+        out.promptNames = src.promptNames == null ? new ArrayList<String>() : new ArrayList<String>(src.promptNames);
+        out.toolIds = src.toolIds == null ? new ArrayList<String>() : new ArrayList<String>(src.toolIds);
+        out.toolNames = src.toolNames == null ? new ArrayList<String>() : new ArrayList<String>(src.toolNames);
+        out.contextIds = src.contextIds == null ? new ArrayList<String>() : new ArrayList<String>(src.contextIds);
+        out.contextNames = src.contextNames == null ? new ArrayList<String>() : new ArrayList<String>(src.contextNames);
+        out.guardrailIds = src.guardrailIds == null ? new ArrayList<String>() : new ArrayList<String>(src.guardrailIds);
+        out.guardrailNames = src.guardrailNames == null ? new ArrayList<String>() : new ArrayList<String>(src.guardrailNames);
         out.governanceMerkleTree = src.governanceMerkleTree;
         return out;
     }
@@ -1140,6 +1184,12 @@ public final class AIGP {
 
     private static String safeTrim(String value) {
         return value == null ? "" : value.trim();
+    }
+
+    private static String defaultSource(String agentId, String orgId) {
+        String resolvedOrg = isBlank(orgId) ? "default" : safeTrim(orgId);
+        String resolvedAgent = isBlank(agentId) ? "unknown-agent" : safeTrim(agentId);
+        return AIGP_SOURCE_SCHEME + resolvedOrg + "/" + resolvedAgent;
     }
 
     private static boolean isValidTraceId(String traceId, String spanId) {

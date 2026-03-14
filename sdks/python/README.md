@@ -97,6 +97,26 @@ Official adapter classes with identical `run(...)` API:
 OpenAPI contract for code generation:
 - `aigp/openapi/agentgp-golden-path.openapi.json`
 
+### AgentGP Ingest Compatibility
+
+If you are publishing raw AIGP events to AgentGP `POST /api/aigp/events`,
+convert canonical AIGP event objects to the current AgentGP wire profile:
+
+```python
+from aigp import create_aigp_event, to_agentgp_ingest_event
+
+event = create_aigp_event(
+    event_type="INJECT_SUCCESS",
+    event_category="inject",
+    agent_id="agent.support-bot-v2",
+    governance_hash="a" * 64,
+)
+
+wire_event = to_agentgp_ingest_event(event)
+# wire_event now includes source/spec_version and JSON-string fields
+# for annotations/governance_merkle_tree as expected by AgentGP ingest.
+```
+
 ---
 
 ## What AIGP Does

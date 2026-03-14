@@ -7,12 +7,6 @@
   "agent_name": "Customer Support Agent",
   "org_id": "org.summit-retail",
   "org_name": "Summit Retail",
-  "policy_id": "",
-  "policy_name": "policy.refund-limits",
-  "policy_version": 3,
-  "prompt_id": "",
-  "prompt_name": "",
-  "prompt_version": 0,
   "governance_hash": "8dd4648db4f94db951f83bb70fa7b575533912f4fd3219d161384df2b8d523ec",
   "hash_type": "merkle-sha256",
   "trace_id": "aabbccdd11223344556677889900aabb",
@@ -20,11 +14,9 @@
   "parent_span_id": "",
   "trace_flags": "01",
   "data_classification": "confidential",
-  "template_rendered": true,
   "denial_reason": "",
   "violation_type": "",
   "severity": "",
-  "source_ip": "10.20.5.55",
   "request_method": "POST",
   "request_path": "/api/agents/customer-support-v3/invoke",
   "annotations": {
@@ -33,7 +25,7 @@
       "PCI-DSS"
     ]
   },
-  "spec_version": "0.12",
+  "spec_version": "0.13",
   "governance_merkle_tree": {
     "algorithm": "sha256",
     "resource_count": 9,

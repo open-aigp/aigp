@@ -51,6 +51,14 @@ Success looks like:
 - CloudEvents helpers (`WrapAsCloudEvent`, `UnwrapFromCloudEvent`, `BuildCEHeaders`)
 - Validation helpers (`ValidateAIGPEvent`)
 
+## AgentGP Ingest Compatibility
+
+For AgentGP `POST /api/aigp/events`, convert canonical SDK events to the current ingest wire profile:
+
+```csharp
+var wireEvent = AIGP.ToAgentGPIngestEvent(evt);
+```
+
 ## Test
 
 ```bash

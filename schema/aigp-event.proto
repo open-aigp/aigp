@@ -1,7 +1,7 @@
 // Copyright 2025 Open AIGP Contributors
 // SPDX-License-Identifier: Apache-2.0
 //
-// AI Governance Proof (AIGP) — Event Schema v0.12
+// AI Governance Proof (AIGP) — Event Schema v0.13
 //
 // Normative Protobuf definition for AIGP events. This file is the single
 // source of truth for AIGP event types. The JSON Schema, OpenAPI specs,
@@ -241,27 +241,8 @@ message AIGPEvent {
   string org_name = 12;
 
 
-  // --------------------------------------------------------
-  //  Policy and Prompt Fields (Spec Section 5.3)
-  // --------------------------------------------------------
-
-  // ID of the policy that was accessed or injected.
-  string policy_id = 20;
-
-  // Human-readable policy name. AGRN: policy.<kebab-name>.
-  string policy_name = 21;
-
-  // Version of the policy at event time (point-in-time snapshot).
-  int32 policy_version = 22;
-
-  // ID of the prompt that was used.
-  string prompt_id = 23;
-
-  // Human-readable prompt name. AGRN: prompt.<kebab-name>.
-  string prompt_name = 24;
-
-  // Version of the prompt at event time (point-in-time snapshot).
-  int32 prompt_version = 25;
+  reserved 20, 21, 22, 23, 24, 25, 35, 50, 70, 71;
+  reserved "policy_id", "policy_name", "policy_version", "prompt_id", "prompt_name", "prompt_version", "template_rendered", "source_ip", "query_hash", "previous_hash";
 
 
   // --------------------------------------------------------
@@ -285,11 +266,12 @@ message AIGPEvent {
   // Data sensitivity classification.
   DataClassification data_classification = 34;
 
-  // Whether the policy was rendered with template variables before delivery.
-  bool template_rendered = 35;
-
   // Merkle tree structure. Present when hash_type is HASH_TYPE_MERKLE_SHA256.
   GovernanceMerkleTree governance_merkle_tree = 36;
+
+  // Optional aggregate integrity hash for composite governance state snapshots.
+  // When present, SHOULD be a SHA-256 lowercase hexadecimal value.
+  string aigp_hash = 37;
 
 
   // --------------------------------------------------------
@@ -309,9 +291,6 @@ message AIGPEvent {
   // --------------------------------------------------------
   //  Request Fields (Spec Section 5.6)
   // --------------------------------------------------------
-
-  // IP address of the requesting agent or service.
-  string source_ip = 50;
 
   // HTTP method or protocol action (e.g., "POST", "A2A", "MCP").
   string request_method = 51;
@@ -335,17 +314,8 @@ message AIGPEvent {
   // AIGP specification version the producer implemented.
   string spec_version = 62;
 
-
-  // --------------------------------------------------------
-  //  Memory and Model Fields (Spec Section 6.9, 6.16)
-  // --------------------------------------------------------
-
-  // SHA-256 hash of a retrieval query (MEMORY_READ events).
-  string query_hash = 70;
-
-  // SHA-256 hash of resource state before a write operation
-  // (MEMORY_WRITTEN, MODEL_SWITCHED events).
-  string previous_hash = 71;
+  // CloudEvents producer identity URI-reference (e.g., "aigp://org/agent").
+  string source = 63;
 
 
   // --------------------------------------------------------
@@ -370,6 +340,25 @@ message AIGPEvent {
   // Points to the event_id that causally precedes this event.
   // Creates a DAG of causal dependencies across agents.
   string causality_ref = 83;
+
+  // Optional hash-chain link to the immediately preceding event.
+  string parent_hash = 84;
+
+  // --------------------------------------------------------
+  //  Resource Identity Arrays (Spec v0.13)
+  // --------------------------------------------------------
+
+  // Optional denormalized identifiers and names for filter-friendly analytics.
+  repeated string policy_ids = 90;
+  repeated string policy_names = 91;
+  repeated string prompt_ids = 92;
+  repeated string prompt_names = 93;
+  repeated string tool_ids = 94;
+  repeated string tool_names = 95;
+  repeated string context_ids = 96;
+  repeated string context_names = 97;
+  repeated string guardrail_ids = 98;
+  repeated string guardrail_names = 99;
 }
 
 

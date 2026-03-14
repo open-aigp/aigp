@@ -197,7 +197,7 @@ def main():
     provider.add_span_processor(SimpleSpanProcessor(ConsoleSpanExporter()))
     trace.set_tracer_provider(provider)
 
-    tracer = trace.get_tracer("aigp.example", "0.12")
+    tracer = trace.get_tracer("aigp.example", "0.13")
 
     # =====================================================================
     # Scenario 2: Single Policy Injection

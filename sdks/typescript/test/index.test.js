@@ -41,8 +41,34 @@ test("createAIGPEvent returns spec-conformant core fields", () => {
   assert.equal(event.event_category, "inject");
   assert.match(event.trace_id, /^[a-f0-9]{32}$/);
   assert.ok(event.sequence_number >= 1);
-  assert.equal(event.spec_version, "0.12");
+  assert.equal(event.spec_version, "0.13");
+  assert.equal(event.source, "aigp://default/agent.test");
   assert.equal(sdk.validateAIGPEvent(event).length, 0);
+});
+
+test("toAgentGPIngestEvent stringifies annotations and merkle tree", () => {
+  const event = sdk.createAIGPEvent({
+    event_type: "INJECT_SUCCESS",
+    event_category: "inject",
+    agent_id: "agent.test",
+    org_id: "org.acme",
+    governance_hash: sdk.computeGovernanceHash("policy"),
+    annotations: { signed: { scope: "prod" } },
+    governance_merkle_tree: {
+      algorithm: "sha256",
+      resource_count: 1,
+      resources: [
+        { resource_type: "policy", resource_name: "policy.limits", hash: "a".repeat(64) },
+      ],
+    },
+  });
+
+  const wire = sdk.toAgentGPIngestEvent(event);
+  assert.equal(wire.source, "aigp://org.acme/agent.test");
+  assert.equal(typeof wire.annotations, "string");
+  assert.equal(typeof wire.governance_merkle_tree, "string");
+  assert.equal(JSON.parse(wire.annotations).signed.scope, "prod");
+  assert.equal(JSON.parse(wire.governance_merkle_tree).resource_count, 1);
 });
 
 test("createAIGPEvent auto-increments sequence_number per (agent_id, trace_id)", () => {
@@ -218,7 +244,7 @@ test("CloudEvents helpers produce expected mappings", () => {
     event_category: "inject",
     agent_id: "agent.test",
     org_id: "org.acme",
-    policy_name: "policy.limits",
+    policy_names: ["policy.limits"],
     governance_hash: sdk.computeGovernanceHash("policy"),
   });
 

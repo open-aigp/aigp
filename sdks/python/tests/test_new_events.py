@@ -107,7 +107,7 @@ class TestEmitBasic:
         tracer = trace.get_tracer("test")
         with tracer.start_as_current_span("test-span") as span:
             event = instrumentor.emit("test.event", content="test.event", span=span)
-        assert event["spec_version"] == "0.12"
+        assert event["spec_version"] == "0.13"
 
     def test_emit_default_category(self, instrumentor):
         """Default event_category is 'governance'."""
@@ -159,8 +159,8 @@ class TestFreeFormEventTypes:
                 span=span,
             )
         assert event["event_type"] == "INJECT_SUCCESS"
-        assert event["policy_name"] == "policy.trading-limits"
-        assert event["policy_version"] == 4
+        assert event["policy_names"] == ["policy.trading-limits"]
+        assert event["annotations"]["policy_version"] == 4
 
     def test_denial_event(self, instrumentor):
         tracer = trace.get_tracer("test")
@@ -187,8 +187,8 @@ class TestFreeFormEventTypes:
                 content="You are a trading assistant...",
                 span=span,
             )
-        assert event["prompt_name"] == "prompt.trading-system"
-        assert event["prompt_version"] == 2
+        assert event["prompt_names"] == ["prompt.trading-system"]
+        assert event["annotations"]["prompt_version"] == 2
         assert event["governance_hash"] == compute_governance_hash("You are a trading assistant...")
 
 

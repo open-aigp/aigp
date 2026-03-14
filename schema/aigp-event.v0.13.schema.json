@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://open-aigp.org/schema/aigp-event.schema.json",
+  "$id": "https://open-aigp.org/schema/v0.13/aigp-event.schema.json",
   "title": "AIGP Event",
   "description": "AI Governance Proof (AIGP) event schema v0.13 — an open specification for capturing cryptographic proof of every AI agent governance action. Includes OpenTelemetry integration fields for native distributed tracing correlation, Merkle tree governance hash for multi-resource verification, salted-proof metadata for privacy-sensitive resources, stream interruption metadata for partial-output governance evidence, OpenLineage data lineage integration, model identity tracking, event signing for non-repudiation, causal ordering for distributed agent pipelines, boundary events for ungoverned system visibility, pointer pattern for large-content performance, and top-level resource identity arrays for efficient analytics filtering.",
   "type": "object",
@@ -275,7 +275,9 @@
       "type": "string",
       "description": "The AIGP specification version the producer implemented. Consumers use this to determine which features and resource types to expect.",
       "default": "",
-      "examples": ["0.13"]
+      "examples": [
+        "0.13"
+      ]
     },
     "source": {
       "type": "string",

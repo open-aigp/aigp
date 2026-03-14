@@ -71,7 +71,7 @@ type MerkleInclusionProof struct {
 
 type GovernanceMerkleTree struct {
 	Algorithm       string                 `json:"algorithm"`
-	ResourceCount       int                    `json:"resource_count"`
+	ResourceCount   int                    `json:"resource_count"`
 	Resources       []MerkleLeaf           `json:"resources,omitempty"`
 	InclusionProofs []MerkleInclusionProof `json:"inclusion_proofs,omitempty"`
 }
@@ -98,29 +98,32 @@ type AIGPEvent struct {
 	AgentName            string                `json:"agent_name"`
 	OrgID                string                `json:"org_id"`
 	OrgName              string                `json:"org_name"`
-	PolicyID             string                `json:"policy_id"`
-	PolicyName           string                `json:"policy_name"`
-	PolicyVersion        int                   `json:"policy_version"`
-	PromptID             string                `json:"prompt_id"`
-	PromptName           string                `json:"prompt_name"`
-	PromptVersion        int                   `json:"prompt_version"`
 	HashType             string                `json:"hash_type"`
+	AIGPHash             string                `json:"aigp_hash"`
+	ParentHash           string                `json:"parent_hash"`
 	DataClassification   string                `json:"data_classification"`
-	TemplateRendered     bool                  `json:"template_rendered"`
 	DenialReason         string                `json:"denial_reason"`
 	ViolationType        string                `json:"violation_type"`
 	Severity             string                `json:"severity"`
-	SourceIP             string                `json:"source_ip"`
 	RequestMethod        string                `json:"request_method"`
 	RequestPath          string                `json:"request_path"`
-	QueryHash            string                `json:"query_hash"`
-	PreviousHash         string                `json:"previous_hash"`
 	Annotations          map[string]any        `json:"annotations"`
 	EventSignature       string                `json:"event_signature"`
 	SignatureKeyID       string                `json:"signature_key_id"`
 	SequenceNumber       int64                 `json:"sequence_number"`
 	CausalityRef         string                `json:"causality_ref"`
 	SpecVersion          string                `json:"spec_version"`
+	Source               string                `json:"source"`
+	PolicyIDs            []string              `json:"policy_ids"`
+	PolicyNames          []string              `json:"policy_names"`
+	PromptIDs            []string              `json:"prompt_ids"`
+	PromptNames          []string              `json:"prompt_names"`
+	ToolIDs              []string              `json:"tool_ids"`
+	ToolNames            []string              `json:"tool_names"`
+	ContextIDs           []string              `json:"context_ids"`
+	ContextNames         []string              `json:"context_names"`
+	GuardrailIDs         []string              `json:"guardrail_ids"`
+	GuardrailNames       []string              `json:"guardrail_names"`
 	GovernanceMerkleTree *GovernanceMerkleTree `json:"governance_merkle_tree,omitempty"`
 }
 
@@ -136,29 +139,32 @@ type CreateEventOptions struct {
 	AgentName            string
 	OrgID                string
 	OrgName              string
-	PolicyID             string
-	PolicyName           string
-	PolicyVersion        int
-	PromptID             string
-	PromptName           string
-	PromptVersion        int
 	HashType             string
+	AIGPHash             string
+	ParentHash           string
 	DataClassification   string
-	TemplateRendered     bool
 	DenialReason         string
 	ViolationType        string
 	Severity             string
-	SourceIP             string
 	RequestMethod        string
 	RequestPath          string
-	QueryHash            string
-	PreviousHash         string
 	Annotations          map[string]any
 	EventSignature       string
 	SignatureKeyID       string
 	SequenceNumber       int64
 	CausalityRef         string
 	SpecVersion          string
+	Source               string
+	PolicyIDs            []string
+	PolicyNames          []string
+	PromptIDs            []string
+	PromptNames          []string
+	ToolIDs              []string
+	ToolNames            []string
+	ContextIDs           []string
+	ContextNames         []string
+	GuardrailIDs         []string
+	GuardrailNames       []string
 	GovernanceMerkleTree *GovernanceMerkleTree
 }
 
@@ -402,9 +408,9 @@ func ComputeMerkleGovernanceHashWithProofs(resources []Resource, includeInclusio
 	}
 
 	tree := &GovernanceMerkleTree{
-		Algorithm: "sha256",
+		Algorithm:     "sha256",
 		ResourceCount: len(leaves),
-		Resources: leaves,
+		Resources:     leaves,
 	}
 	if includeInclusionProofs {
 		tree.InclusionProofs = BuildInclusionProofs(tree)
@@ -533,7 +539,7 @@ func CreateAIGPEvent(opts CreateEventOptions) (AIGPEvent, error) {
 
 	specVersion := opts.SpecVersion
 	if specVersion == "" {
-		specVersion = "0.12"
+		specVersion = "0.13"
 	}
 
 	sequenceNumber := opts.SequenceNumber
@@ -559,30 +565,36 @@ func CreateAIGPEvent(opts CreateEventOptions) (AIGPEvent, error) {
 		AgentName:            opts.AgentName,
 		OrgID:                opts.OrgID,
 		OrgName:              opts.OrgName,
-		PolicyID:             opts.PolicyID,
-		PolicyName:           opts.PolicyName,
-		PolicyVersion:        opts.PolicyVersion,
-		PromptID:             opts.PromptID,
-		PromptName:           opts.PromptName,
-		PromptVersion:        opts.PromptVersion,
 		HashType:             hashType,
+		AIGPHash:             opts.AIGPHash,
+		ParentHash:           opts.ParentHash,
 		DataClassification:   opts.DataClassification,
-		TemplateRendered:     opts.TemplateRendered,
 		DenialReason:         opts.DenialReason,
 		ViolationType:        opts.ViolationType,
 		Severity:             opts.Severity,
-		SourceIP:             opts.SourceIP,
 		RequestMethod:        opts.RequestMethod,
 		RequestPath:          opts.RequestPath,
-		QueryHash:            opts.QueryHash,
-		PreviousHash:         opts.PreviousHash,
 		Annotations:          annotations,
 		EventSignature:       opts.EventSignature,
 		SignatureKeyID:       opts.SignatureKeyID,
 		SequenceNumber:       sequenceNumber,
 		CausalityRef:         opts.CausalityRef,
 		SpecVersion:          specVersion,
+		Source:               strings.TrimSpace(opts.Source),
+		PolicyIDs:            append([]string{}, opts.PolicyIDs...),
+		PolicyNames:          append([]string{}, opts.PolicyNames...),
+		PromptIDs:            append([]string{}, opts.PromptIDs...),
+		PromptNames:          append([]string{}, opts.PromptNames...),
+		ToolIDs:              append([]string{}, opts.ToolIDs...),
+		ToolNames:            append([]string{}, opts.ToolNames...),
+		ContextIDs:           append([]string{}, opts.ContextIDs...),
+		ContextNames:         append([]string{}, opts.ContextNames...),
+		GuardrailIDs:         append([]string{}, opts.GuardrailIDs...),
+		GuardrailNames:       append([]string{}, opts.GuardrailNames...),
 		GovernanceMerkleTree: opts.GovernanceMerkleTree,
+	}
+	if event.Source == "" {
+		event.Source = defaultSource(event.AgentID, event.OrgID)
 	}
 	return event, nil
 }
@@ -694,6 +706,63 @@ func eventToMap(event AIGPEvent) (map[string]any, error) {
 	return out, nil
 }
 
+func defaultSource(agentID, orgID string) string {
+	org := strings.TrimSpace(orgID)
+	if org == "" {
+		org = "default"
+	}
+	agent := strings.TrimSpace(agentID)
+	if agent == "" {
+		agent = "unknown-agent"
+	}
+	return AIGPSourceScheme + org + "/" + agent
+}
+
+// ToAgentGPIngestEvent converts a canonical AIGP event to the current
+// AgentGP /api/aigp/events wire profile:
+// - ensures source + spec_version
+// - stringifies annotations and governance_merkle_tree when they are objects
+func ToAgentGPIngestEvent(event AIGPEvent) (map[string]any, error) {
+	out, err := eventToMap(event)
+	if err != nil {
+		return nil, err
+	}
+
+	specVersion, _ := out["spec_version"].(string)
+	if strings.TrimSpace(specVersion) == "" {
+		out["spec_version"] = "0.13"
+	}
+
+	source, _ := out["source"].(string)
+	if strings.TrimSpace(source) == "" {
+		out["source"] = defaultSource(event.AgentID, event.OrgID)
+	}
+
+	if ann, ok := out["annotations"]; ok && ann != nil {
+		if annStr, isString := ann.(string); !isString {
+			encoded, encErr := json.Marshal(ann)
+			if encErr != nil {
+				return nil, encErr
+			}
+			out["annotations"] = string(encoded)
+		} else if strings.TrimSpace(annStr) == "" {
+			out["annotations"] = "{}"
+		}
+	}
+
+	if tree, ok := out["governance_merkle_tree"]; ok && tree != nil {
+		if _, isString := tree.(string); !isString {
+			encoded, encErr := json.Marshal(tree)
+			if encErr != nil {
+				return nil, encErr
+			}
+			out["governance_merkle_tree"] = string(encoded)
+		}
+	}
+
+	return out, nil
+}
+
 func WrapAsCloudEvent(event AIGPEvent, includeDataschema bool) (map[string]any, error) {
 	if event.EventID == "" || event.EventType == "" || event.AgentID == "" {
 		return nil, errors.New("aigp event must have event_id, event_type, and agent_id to wrap as cloudevent")
@@ -730,10 +799,10 @@ func WrapAsCloudEvent(event AIGPEvent, includeDataschema bool) (map[string]any, 
 	if includeDataschema {
 		ce["dataschema"] = AIGPDataSchema
 	}
-	if event.PolicyName != "" {
-		ce["subject"] = event.PolicyName
-	} else if event.PromptName != "" {
-		ce["subject"] = event.PromptName
+	if len(event.PolicyNames) > 0 && strings.TrimSpace(event.PolicyNames[0]) != "" {
+		ce["subject"] = event.PolicyNames[0]
+	} else if len(event.PromptNames) > 0 && strings.TrimSpace(event.PromptNames[0]) != "" {
+		ce["subject"] = event.PromptNames[0]
 	}
 	if orgID != "default" {
 		ce["aigporgid"] = orgID

@@ -34,6 +34,16 @@ _SEQUENCE_COUNTERS: dict[str, int] = {}
 _SEQUENCE_LOCK = threading.Lock()
 
 
+def _default_source(agent_id: str, org_id: str) -> str:
+    org = (org_id or "").strip() or "default"
+    agent = (agent_id or "").strip() or "unknown-agent"
+    return f"aigp://{org}/{agent}"
+
+
+def _to_json_string(value: Any) -> str:
+    return json.dumps(value, separators=(",", ":"), sort_keys=True, default=str)
+
+
 def _next_sequence_number(agent_id: str, trace_id: str) -> int:
     key = f"{(agent_id or '').strip()}|{(trace_id or '').strip()}"
     with _SEQUENCE_LOCK:
@@ -603,29 +613,29 @@ def create_aigp_event(
     agent_name: str = "",
     org_id: str = "",
     org_name: str = "",
-    # Policy fields
-    policy_id: str = "",
-    policy_name: str = "",
-    policy_version: int = 0,
-    # Prompt fields
-    prompt_id: str = "",
-    prompt_name: str = "",
-    prompt_version: int = 0,
     # Governance fields
     hash_type: str = "sha256",
+    aigp_hash: str = "",
+    parent_hash: str = "",
     data_classification: str = "",
-    template_rendered: bool = False,
     # Denial fields
     denial_reason: str = "",
     violation_type: str = "",
     severity: str = "",
+    # Resource identity arrays (v0.13)
+    policy_ids: Optional[list[str]] = None,
+    policy_names: Optional[list[str]] = None,
+    prompt_ids: Optional[list[str]] = None,
+    prompt_names: Optional[list[str]] = None,
+    tool_ids: Optional[list[str]] = None,
+    tool_names: Optional[list[str]] = None,
+    context_ids: Optional[list[str]] = None,
+    context_names: Optional[list[str]] = None,
+    guardrail_ids: Optional[list[str]] = None,
+    guardrail_names: Optional[list[str]] = None,
     # Request fields
-    source_ip: str = "",
     request_method: str = "",
     request_path: str = "",
-    # Memory governance fields (Section 5.4)
-    query_hash: str = "",
-    previous_hash: str = "",
     # Annotations (Section 5.7)
     annotations: Optional[dict[str, Any]] = None,
     # Proof integrity fields (v0.8.0)
@@ -634,21 +644,21 @@ def create_aigp_event(
     sequence_number: int = 0,
     causality_ref: str = "",
     # Version
-    spec_version: str = "0.12",
+    spec_version: str = "0.13",
+    source: str = "",
     # Merkle tree (Section 8.8)
     governance_merkle_tree: Optional[dict[str, Any]] = None,
 ) -> dict[str, Any]:
     """
-    Create an AIGP event conforming to the v0.12 schema.
+    Create an AIGP event conforming to the v0.13 schema.
 
     This function creates the standalone AIGP JSON event (the governance
     record). For the OTel span event (the observability record), use
     AIGPInstrumentor which handles dual-emit.
 
-    v0.8.0 adds proof integrity fields: event_signature (JWS Compact
-    Serialization), signature_key_id (AGRN-style key identifier),
-    sequence_number (monotonic per agent_id+trace_id), and
-    causality_ref (preceding event_id for causal ordering).
+    v0.13 adds optional resource identity arrays for efficient filtering
+    (`policy_ids`, `prompt_ids`, `tool_ids`, `context_ids`, `guardrail_ids`)
+    plus `aigp_hash` and `parent_hash` integrity fields.
 
     Args:
         event_type: AIGP event type (e.g., "INJECT_SUCCESS").
@@ -659,18 +669,16 @@ def create_aigp_event(
         span_id: OTel span ID (16-char hex). Optional.
         parent_span_id: OTel parent span ID (16-char hex). Optional.
         trace_flags: W3C trace flags (2-char hex). Optional.
-        query_hash: SHA-256 of retrieval query (MEMORY_READ). Optional.
-        previous_hash: SHA-256 of prior state (MEMORY_WRITTEN, MODEL_SWITCHED). Optional.
         annotations: Informational context (not hashed). Optional.
         event_signature: JWS Compact Serialization. Typically set via sign_event().
         signature_key_id: AGRN-style key identifier for the signing key.
         sequence_number: Monotonic counter per (agent_id, trace_id). Values <= 0 auto-increment.
         causality_ref: event_id of the preceding event in the causal chain.
-        spec_version: AIGP spec version. Default "0.12".
+        spec_version: AIGP spec version. Default "0.13".
         governance_merkle_tree: Merkle tree dict (Section 8.8). Optional.
 
     Returns:
-        Dict conforming to AIGP event schema v0.12.
+        Dict conforming to AIGP event schema v0.13.
     """
     now = datetime.now(timezone.utc)
 
@@ -703,30 +711,29 @@ def create_aigp_event(
         "agent_name": agent_name,
         "org_id": org_id,
         "org_name": org_name,
-        # Policy fields (Section 5.3)
-        "policy_id": policy_id,
-        "policy_name": policy_name,
-        "policy_version": policy_version,
-        # Prompt fields (Section 5.3)
-        "prompt_id": prompt_id,
-        "prompt_name": prompt_name,
-        "prompt_version": prompt_version,
         # Governance fields (Section 5.4)
         "hash_type": hash_type,
+        "aigp_hash": aigp_hash,
+        "parent_hash": parent_hash,
         "data_classification": data_classification,
-        # Timestamps and rendering (Section 5.7)
-        "template_rendered": template_rendered,
         # Denial fields (Section 5.5)
         "denial_reason": denial_reason,
         "violation_type": violation_type,
         "severity": severity,
         # Request fields (Section 5.6)
-        "source_ip": source_ip,
         "request_method": request_method,
         "request_path": request_path,
-        # Memory governance fields (Section 5.4)
-        "query_hash": query_hash,
-        "previous_hash": previous_hash,
+        # Resource identity arrays (v0.13)
+        "policy_ids": list(policy_ids or []),
+        "policy_names": list(policy_names or []),
+        "prompt_ids": list(prompt_ids or []),
+        "prompt_names": list(prompt_names or []),
+        "tool_ids": list(tool_ids or []),
+        "tool_names": list(tool_names or []),
+        "context_ids": list(context_ids or []),
+        "context_names": list(context_names or []),
+        "guardrail_ids": list(guardrail_ids or []),
+        "guardrail_names": list(guardrail_names or []),
         # Annotations (Section 5.7) — informational, not hashed
         "annotations": annotations or {},
         # Proof integrity fields (v0.8.0)
@@ -736,6 +743,8 @@ def create_aigp_event(
         "causality_ref": causality_ref,
         # Version (Section 5.7)
         "spec_version": spec_version,
+        # CloudEvents producer identity (for AgentGP ingest compatibility)
+        "source": (source or "").strip() or _default_source(agent_id, org_id),
     }
 
     # Merkle tree (Section 8.8) — only present when used
@@ -743,3 +752,38 @@ def create_aigp_event(
         event["governance_merkle_tree"] = governance_merkle_tree
 
     return event
+
+
+def to_agentgp_ingest_event(event: dict[str, Any]) -> dict[str, Any]:
+    """
+    Convert a canonical AIGP event dict into AgentGP ingest wire format.
+
+    AgentGP ``POST /api/aigp/events`` currently validates:
+    - ``source`` and ``spec_version`` must be present
+    - ``annotations`` and ``governance_merkle_tree`` are JSON strings on the wire
+
+    This helper keeps AIGP canonical in-memory shape (objects) while producing
+    the transport shape expected by the current AgentGP ingestion profile.
+    """
+    if not isinstance(event, dict):
+        raise TypeError("event must be a dict")
+
+    out = dict(event)
+    if not (out.get("spec_version") or "").strip():
+        out["spec_version"] = "0.13"
+    if not (out.get("source") or "").strip():
+        out["source"] = _default_source(
+            str(out.get("agent_id", "")),
+            str(out.get("org_id", "")),
+        )
+
+    if "annotations" in out and out["annotations"] is not None and not isinstance(out["annotations"], str):
+        out["annotations"] = _to_json_string(out["annotations"])
+    if (
+        "governance_merkle_tree" in out
+        and out["governance_merkle_tree"] is not None
+        and not isinstance(out["governance_merkle_tree"], str)
+    ):
+        out["governance_merkle_tree"] = _to_json_string(out["governance_merkle_tree"])
+
+    return out

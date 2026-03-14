@@ -81,7 +81,7 @@ class TestGovernanceRunFacet:
         assert facet["hashType"] == "sha256"
         assert facet["agentId"] == "agent.test-bot"
         assert facet["traceId"] == "4bf92f3577b34da6a3ce929d0e0e4736"
-        assert facet["specVersion"] == "0.12"
+        assert facet["specVersion"] == "0.13"
 
     def test_leaf_count_single_resource(self):
         event = _make_policy_delivered()
@@ -148,7 +148,7 @@ class TestGovernanceRunFacet:
         json_str = json.dumps(facet)
         parsed = json.loads(json_str)
         assert parsed["governanceHash"] == "a" * 64
-        assert parsed["specVersion"] == "0.12"
+        assert parsed["specVersion"] == "0.13"
 
 
 # ===================================================================
@@ -160,8 +160,8 @@ class TestResourceInputFacets:
 
     def test_single_policy_resource(self):
         event = _make_policy_delivered(
-            policy_name="policy.trading-limits",
-            policy_version=4,
+            policy_names=["policy.trading-limits"],
+            annotations={"policy_version": 4},
         )
         facets = build_resource_input_facets(event)
 
@@ -180,8 +180,8 @@ class TestResourceInputFacets:
             event_category="governance",
             agent_id="agent.test",
             trace_id="trace-prompt",
-            prompt_name="prompt.scoring-v3",
-            prompt_version=2,
+            prompt_names=["prompt.scoring-v3"],
+            annotations={"prompt_version": 2},
             governance_hash="b" * 64,
         )
         facets = build_resource_input_facets(event)
@@ -259,8 +259,8 @@ class TestOpenLineageRunEvent:
 
     def test_complete_structure(self):
         event = _make_policy_delivered(
-            policy_name="policy.trading-limits",
-            policy_version=4,
+            policy_names=["policy.trading-limits"],
+            annotations={"policy_version": 4},
         )
         ol = build_openlineage_run_event(
             event,
@@ -296,20 +296,20 @@ class TestOpenLineageRunEvent:
 
     def test_run_id_defaults_to_trace_id(self):
         event = _make_policy_delivered(
-            policy_name="policy.test",
+            policy_names=["policy.test"],
         )
         ol = build_openlineage_run_event(event, "ns", "job")
         assert ol["run"]["runId"] == "4bf92f3577b34da6a3ce929d0e0e4736"
 
     def test_custom_run_id(self):
-        event = _make_policy_delivered(policy_name="policy.test")
+        event = _make_policy_delivered(policy_names=["policy.test"])
         ol = build_openlineage_run_event(
             event, "ns", "job", run_id="custom-run-123"
         )
         assert ol["run"]["runId"] == "custom-run-123"
 
     def test_custom_event_type(self):
-        event = _make_policy_delivered(policy_name="policy.test")
+        event = _make_policy_delivered(policy_names=["policy.test"])
         ol = build_openlineage_run_event(
             event, "ns", "job", event_type="START"
         )
@@ -337,7 +337,7 @@ class TestOpenLineageRunEvent:
 
     def test_json_serializable(self):
         event = _make_policy_delivered(
-            policy_name="policy.test",
+            policy_names=["policy.test"],
             data_classification="internal",
         )
         ol = build_openlineage_run_event(event, "test.ns", "test.job")
@@ -347,7 +347,7 @@ class TestOpenLineageRunEvent:
         assert parsed["job"]["namespace"] == "test.ns"
 
     def test_event_time_format(self):
-        event = _make_policy_delivered(policy_name="policy.test")
+        event = _make_policy_delivered(policy_names=["policy.test"])
         ol = build_openlineage_run_event(event, "ns", "job")
         # Should be ISO 8601 with milliseconds
         assert re.match(

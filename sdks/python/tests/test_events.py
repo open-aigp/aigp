@@ -138,27 +138,28 @@ class TestCreateAIGPEvent:
         )
         assert event["agent_name"] == ""
         assert event["org_id"] == ""
-        assert event["policy_version"] == 0
+        assert event["policy_names"] == []
+        assert event["prompt_names"] == []
         assert event["data_classification"] == ""
         assert event["denial_reason"] == ""
         assert event["severity"] == ""
         assert event["annotations"] == {}
-        assert event["spec_version"] == "0.12"
+        assert event["spec_version"] == "0.13"
 
-    def test_query_hash_field(self):
-        """v0.7.0: query_hash is included when provided."""
+    def test_query_hash_annotation(self):
+        """v0.13: query_hash is carried in annotations when provided."""
         event = create_aigp_event(
             event_type="MEMORY_READ",
             event_category="memory",
             agent_id="agent.test-bot",
             trace_id="test-trace",
             governance_hash="a" * 64,
-            query_hash="b" * 64,
+            annotations={"query_hash": "b" * 64},
         )
-        assert event["query_hash"] == "b" * 64
+        assert event["annotations"]["query_hash"] == "b" * 64
 
-    def test_query_hash_default_empty(self):
-        """v0.7.0: query_hash defaults to empty string."""
+    def test_query_hash_absent_by_default(self):
+        """v0.13: query_hash is absent unless explicitly set in annotations."""
         event = create_aigp_event(
             event_type="INJECT_SUCCESS",
             event_category="inject",
@@ -166,22 +167,22 @@ class TestCreateAIGPEvent:
             trace_id="test-trace",
             governance_hash="a" * 64,
         )
-        assert event["query_hash"] == ""
+        assert "query_hash" not in event["annotations"]
 
-    def test_previous_hash_field(self):
-        """v0.7.0: previous_hash is included when provided."""
+    def test_previous_hash_annotation(self):
+        """v0.13: previous_hash is carried in annotations when provided."""
         event = create_aigp_event(
             event_type="MEMORY_WRITTEN",
             event_category="memory",
             agent_id="agent.test-bot",
             trace_id="test-trace",
             governance_hash="a" * 64,
-            previous_hash="c" * 64,
+            annotations={"previous_hash": "c" * 64},
         )
-        assert event["previous_hash"] == "c" * 64
+        assert event["annotations"]["previous_hash"] == "c" * 64
 
-    def test_previous_hash_default_empty(self):
-        """v0.7.0: previous_hash defaults to empty string."""
+    def test_previous_hash_absent_by_default(self):
+        """v0.13: previous_hash is absent unless explicitly set in annotations."""
         event = create_aigp_event(
             event_type="INJECT_SUCCESS",
             event_category="inject",
@@ -189,7 +190,7 @@ class TestCreateAIGPEvent:
             trace_id="test-trace",
             governance_hash="a" * 64,
         )
-        assert event["previous_hash"] == ""
+        assert "previous_hash" not in event["annotations"]
 
     def test_json_serializable(self):
         """AIGP events MUST be representable as JSON (Section 2.2)."""

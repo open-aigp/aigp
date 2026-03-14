@@ -55,6 +55,7 @@ from aigp.instrumentor import AIGPInstrumentor
 
 from aigp.events import (
     create_aigp_event,
+    to_agentgp_ingest_event,
     compute_governance_hash,
     compute_leaf_hash,
     compute_merkle_governance_hash,
@@ -139,6 +140,7 @@ __all__ = [
     "AIGPInstrumentor",
     # ── Events & Proof ──
     "create_aigp_event",
+    "to_agentgp_ingest_event",
     "compute_governance_hash",
     "compute_leaf_hash",
     "compute_merkle_governance_hash",

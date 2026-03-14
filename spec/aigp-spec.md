@@ -1,6 +1,6 @@
 # AI Governance Proof (AIGP) Specification
 
-**Version:** 0.12 (Draft)
+**Version:** 0.13 (Draft)
 
 **Status:** Draft
 
@@ -45,6 +45,7 @@ Future versions of this specification may introduce breaking changes. Implemente
   - [5.6 Request Fields](#56-request-fields)
   - [5.7 Annotations, Timestamps, and Version](#57-annotations-timestamps-and-version)
   - [5.8 Proof Integrity Fields](#58-proof-integrity-fields)
+  - [5.9 Resource Identity Arrays](#59-resource-identity-arrays)
 - [6. Event Types](#6-event-types)
   - [6.1 Policy Injection Events](#61-policy-injection-events)
   - [6.2 Prompt Usage Events](#62-prompt-usage-events)
@@ -286,6 +287,7 @@ The following fields relate to the cryptographic proof and traceability of the g
 |---|---|---|---|
 | `governance_hash` | String | *(required)* | See Section 5.1 and Section 8. |
 | `hash_type` | String | `"sha256"` | The hash algorithm used to compute `governance_hash`. MUST be a recognized algorithm identifier. Default is `"sha256"`. Implementations MAY support `"sha384"`, `"sha512"`, or `"merkle-sha256"` (Merkle tree root). See Section 8.8. |
+| `aigp_hash` | String | `""` | Optional aggregate integrity hash for composite governance state snapshots. When present and non-empty, SHOULD be a 64-character lowercase hexadecimal SHA-256 value. |
 | `governance_merkle_tree` | Object | *(none)* | When `hash_type` is `"merkle-sha256"`, this OPTIONAL field contains the Merkle tree structure enabling per-resource verification of governed content. Implementations MAY include Merkle inclusion proof paths for subset verification. See Section 8.8. |
 | `trace_id` | String | *(required)* | See Section 5.1 and Section 11. |
 | `span_id` | String | `""` | The OpenTelemetry span ID identifying the specific operation that produced this governance event. When present, MUST be a 16-character lowercase hexadecimal string conforming to the W3C Trace Context `parent-id` format. See Section 11.4. |
@@ -324,7 +326,8 @@ The following fields are OPTIONAL and provide extensibility, operational timesta
 | `template_rendered` | Boolean | `false` | Indicates whether the policy content was rendered with template variables before delivery. When `true`, the `governance_hash` MUST be computed over the rendered (post-substitution) content. |
 | `ingested_at` | String (DateTime) | *(none)* | The time at which the event was received by the analytics or storage system. MUST be in RFC 3339 format with millisecond precision and UTC timezone designator `Z`. This field enables measurement of ingestion latency (`ingested_at` minus `event_time`). |
 | `annotations` | Object | `{}` | Informational context for the governance event. Annotations are NOT included in governance hashes and are NOT governed resources. Implementations MAY use this field to attach regulatory hooks, domain-specific tags, or supplementary context that does not require cryptographic proof. Consumers MUST NOT require specific keys within `annotations` to process core AIGP events. Consumers MUST ignore annotation keys they do not recognize. |
-| `spec_version` | String | `""` | The AIGP specification version the producer implemented (e.g., `"0.12"`). Consumers MAY use this field to determine which features and resource types to expect. When absent or empty, consumers SHOULD NOT assume any particular version. |
+| `spec_version` | String | `""` | The AIGP specification version the producer implemented (e.g., `"0.13"`). Consumers MAY use this field to determine which features and resource types to expect. When absent or empty, consumers SHOULD NOT assume any particular version. |
+| `source` | String | `""` | CloudEvents producer identity URI-reference (e.g., `aigp://org.finco/agent.trading-bot-v2`). |
 
 ### 5.8 Proof Integrity Fields
 
@@ -336,6 +339,24 @@ The following fields support non-repudiation and causal ordering of governance e
 | `signature_key_id` | String | `""` | AGRN-style identifier for the signing key used to produce `event_signature` (e.g., `aigp:org.finco:agent.trading-bot-v2:2026-02`). Enables key rotation and multi-agent key management. |
 | `sequence_number` | Integer | `1` | Monotonically increasing counter scoped to (`agent_id`, `trace_id`). Provides causal ordering within a single trace. Consumers can detect missing events (gaps in sequence) and reconstruct event ordering without relying on wall-clock timestamps. MUST be an integer >= 1 and MUST increase by exactly 1 within scope. |
 | `causality_ref` | String | `""` | The `event_id` (UUID) of the causally preceding event. Creates a directed acyclic graph (DAG) of event dependencies across agents and traces. Used for cross-agent causal ordering where `sequence_number` (per-trace) is insufficient. |
+| `parent_hash` | String | `""` | Optional hash-chain link to the immediately preceding event in an append-only stream. |
+
+### 5.9 Resource Identity Arrays
+
+The following fields are OPTIONAL denormalized arrays introduced in v0.13 for filter-friendly analytics over multi-resource governance events. Canonical cryptographic resource data remains in `governance_merkle_tree.resources`.
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `policy_ids` | Array[String] | `[]` | IDs of policies associated with this event. |
+| `policy_names` | Array[String] | `[]` | Names of policies associated with this event. |
+| `prompt_ids` | Array[String] | `[]` | IDs of prompts associated with this event. |
+| `prompt_names` | Array[String] | `[]` | Names of prompts associated with this event. |
+| `tool_ids` | Array[String] | `[]` | IDs of tools associated with this event. |
+| `tool_names` | Array[String] | `[]` | Names of tools associated with this event. |
+| `context_ids` | Array[String] | `[]` | IDs of context resources associated with this event. |
+| `context_names` | Array[String] | `[]` | Names of context resources associated with this event. |
+| `guardrail_ids` | Array[String] | `[]` | IDs of guardrails associated with this event. |
+| `guardrail_names` | Array[String] | `[]` | Names of guardrails associated with this event. |
 
 ---
 
@@ -1315,7 +1336,7 @@ Every AIGP event transmitted via CloudEvents MUST include the following context 
 | `source` | REQUIRED | `"aigp://"` + `org_id` + `"/"` + `agent_id` | URI identifying the governance event producer. Example: `"aigp://org.finco/agent.trading-bot-v2"`. When `org_id` is empty, use `"aigp://default/"` + `agent_id`. |
 | `time` | OPTIONAL | `event_time` | RFC 3339 timestamp. SHOULD be included. |
 | `datacontenttype` | OPTIONAL | `"application/json"` | SHOULD be included for structured mode. |
-| `dataschema` | OPTIONAL | `"https://open-aigp.org/schema/aigp-event.v0.12.schema.json"` | URI of the AIGP JSON Schema for the emitted event version. |
+| `dataschema` | OPTIONAL | `"https://open-aigp.org/schema/aigp-event.v0.13.schema.json"` | URI of the AIGP JSON Schema for the emitted event version. |
 | `subject` | OPTIONAL | `policy_name` or `prompt_name` | The primary governed resource, when applicable. |
 
 #### 13.1.1 Type Attribute Convention
@@ -1368,7 +1389,7 @@ The entire CloudEvents envelope (context attributes + AIGP event as `data`) is s
   "source": "aigp://org.finco/agent.trading-bot-v2",
   "time": "2026-02-15T14:30:00.123Z",
   "datacontenttype": "application/json",
-  "dataschema": "https://open-aigp.org/schema/aigp-event.v0.12.schema.json",
+  "dataschema": "https://open-aigp.org/schema/aigp-event.v0.13.schema.json",
   "aigpagentid": "agent.trading-bot-v2",
   "aigporgid": "org.finco",
   "aigpcategory": "inject",
@@ -1386,7 +1407,7 @@ The entire CloudEvents envelope (context attributes + AIGP event as `data`) is s
     "hash_type": "sha256",
     "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
     "data_classification": "confidential",
-    "spec_version": "0.12"
+    "spec_version": "0.13"
   }
 }
 ```
@@ -1606,7 +1627,7 @@ The following is a fully annotated AIGP event representing a successful policy i
   "signature_key_id": "",
   "sequence_number": 1,
   "causality_ref": "",
-  "spec_version": "0.12"
+  "spec_version": "0.13"
 }
 ```
 
@@ -1644,7 +1665,7 @@ The following is a fully annotated AIGP event representing a successful policy i
 | `signature_key_id` | Empty -- no signing key used. When populated, contains an AGRN-style key identifier. |
 | `sequence_number` | `1` -- causal ordering counter. Monotonically increasing per (`agent_id`, `trace_id`) pair (Section 5.8). |
 | `causality_ref` | Empty -- no causally preceding event referenced. When populated, contains the `event_id` of the prior event (Section 5.8). |
-| `spec_version` | `0.12` -- the AIGP specification version the producer implemented. |
+| `spec_version` | `0.13` -- the AIGP specification version the producer implemented. |
 
 ---
 
@@ -1652,6 +1673,7 @@ The following is a fully annotated AIGP event representing a successful policy i
 
 | Version | Date | Changes |
 |---|---|---|
+| 0.13 | 2026-03-14 | Canonical v0.13 alignment across AIGP and AgentGP SDKs. Adds optional top-level resource identity arrays (`policy_*`, `prompt_*`, `tool_*`, `context_*`, `guardrail_*`), adds optional integrity fields `aigp_hash` and `parent_hash`, and requires CloudEvents producer identity via `source` in schema examples and SDK defaults. |
 | 0.12 | 2026-02-26 | Version line bump and alignment of spec/schema/docs/examples/SDK defaults and integration companion docs to 0.12; no wire-format breaking changes from 0.11. |
 | 0.11 | 2026-02-20 | Privacy + streaming + auditor readiness. Adds optional salted leaf metadata (`is_salted`, `salt_ref`) to support privacy-preserving verification patterns where raw salt material is managed out-of-band. Adds optional stream interruption metadata (`is_partial`, `offset_unit`, `offset`) for partial-output proof in blocked/violating inference flows. Extends verifier guidance with stable integrity finding identifiers (`SIGNATURE_VERIFICATION_FAILED`, `MERKLE_ROOT_MISMATCH`, `INCLUSION_PROOF_INVALID`) and introduces a recommended verifier report schema (`schema/aigp-verifier-report.schema.json`). |
 | 0.10.0 | 2026-02-19 | Merkle inclusion proofs for selective verification. Adds optional `governance_merkle_tree.inclusion_proofs` with ordered proof paths (`sibling_hash`, `sibling_position`) for root-verifiable subset auditing. Introduces conformance profiles (Section 12.4) and reference HIPAA/FINRA sector profiles (Section 12.5), including profile-level requirement to sign `high`/`critical` severity events. Adds boundary claim guidance for `UNVERIFIED_BOUNDARY` events and a reference audit viewer requirements appendix for non-technical auditors. Tightens ordering baseline: `sequence_number` is now a required field and MUST be >= 1. |

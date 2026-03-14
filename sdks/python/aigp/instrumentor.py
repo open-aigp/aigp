@@ -185,17 +185,21 @@ class AIGPInstrumentor:
         if aigp_event.get("data_classification"):
             attrs[AIGPAttributes.DATA_CLASSIFICATION] = aigp_event["data_classification"]
 
-        # Policy (singular)
-        if aigp_event.get("policy_name"):
-            attrs[AIGPAttributes.POLICY_NAME] = aigp_event["policy_name"]
-        if aigp_event.get("policy_version"):
-            attrs[AIGPAttributes.POLICY_VERSION] = aigp_event["policy_version"]
-
-        # Prompt (singular)
-        if aigp_event.get("prompt_name"):
-            attrs[AIGPAttributes.PROMPT_NAME] = aigp_event["prompt_name"]
-        if aigp_event.get("prompt_version"):
-            attrs[AIGPAttributes.PROMPT_VERSION] = aigp_event["prompt_version"]
+        # Policy/Prompt (v0.13 canonical arrays + version hints in annotations)
+        policy_names = aigp_event.get("policy_names") or []
+        if isinstance(policy_names, list) and policy_names and policy_names[0]:
+            attrs[AIGPAttributes.POLICY_NAME] = str(policy_names[0])
+        prompt_names = aigp_event.get("prompt_names") or []
+        if isinstance(prompt_names, list) and prompt_names and prompt_names[0]:
+            attrs[AIGPAttributes.PROMPT_NAME] = str(prompt_names[0])
+        event_annotations = aigp_event.get("annotations") or {}
+        if isinstance(event_annotations, dict):
+            policy_version = event_annotations.get("policy_version")
+            if isinstance(policy_version, int) and policy_version > 0:
+                attrs[AIGPAttributes.POLICY_VERSION] = policy_version
+            prompt_version = event_annotations.get("prompt_version")
+            if isinstance(prompt_version, int) and prompt_version > 0:
+                attrs[AIGPAttributes.PROMPT_VERSION] = prompt_version
 
         # Enforcement result (derived from event_type)
         event_type = aigp_event["event_type"]
@@ -426,6 +430,18 @@ class AIGPInstrumentor:
             )
             resolved_governance_hash = compute_governance_hash(fallback_material)
 
+        resolved_annotations = dict(annotations or {})
+        if policy_version > 0:
+            resolved_annotations.setdefault("policy_version", int(policy_version))
+        if prompt_version > 0:
+            resolved_annotations.setdefault("prompt_version", int(prompt_version))
+        if template_rendered:
+            resolved_annotations.setdefault("template_rendered", True)
+        if query_hash:
+            resolved_annotations.setdefault("query_hash", query_hash)
+        if previous_hash:
+            resolved_annotations.setdefault("previous_hash", previous_hash)
+
         aigp_event = create_aigp_event(
             event_type=event_type,
             event_category=event_category,
@@ -439,22 +455,17 @@ class AIGPInstrumentor:
             agent_name=self.agent_name,
             org_id=self.org_id,
             org_name=self.org_name,
-            policy_id=policy_id,
-            policy_name=policy_name,
-            policy_version=policy_version,
-            prompt_id=prompt_id,
-            prompt_name=prompt_name,
-            prompt_version=prompt_version,
+            policy_ids=[policy_id] if policy_id else [],
+            policy_names=[policy_name] if policy_name else [],
+            prompt_ids=[prompt_id] if prompt_id else [],
+            prompt_names=[prompt_name] if prompt_name else [],
             data_classification=data_classification,
-            template_rendered=template_rendered,
             denial_reason=denial_reason,
             violation_type=violation_type,
             severity=severity,
             request_method=request_method,
             request_path=request_path,
-            query_hash=query_hash,
-            previous_hash=previous_hash,
-            annotations=annotations,
+            annotations=resolved_annotations,
             sequence_number=sequence_number,
             causality_ref=causality_ref,
             governance_merkle_tree=merkle_tree,
